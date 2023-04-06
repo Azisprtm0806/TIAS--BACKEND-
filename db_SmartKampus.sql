@@ -61,6 +61,7 @@ CREATE TABLE tb_data_pribadi (
 	nip_pasangan CHAR(18),
 	pekerjaan_pasangan varchar(255),
 	tanggal_pns_pasangan DATE,
+	status INT DEFAULT 0,
 	created_at TIMESTAMP,
 	updated_at TIMESTAMP,
 	deleted_at TIMESTAMP
@@ -72,6 +73,7 @@ CREATE TABLE tb_dokumen_pribadi (
 	nama_dok varchar(255) NOT NULL,
 	jenis_dok varchar(255) NOT NULL,
 	file_dok varchar(255) NOT NULL,
+	status INT DEFAULT 0,
 	created_at TIMESTAMP,
 	updated_at TIMESTAMP,
 	deleted_at TIMESTAMP
@@ -81,16 +83,17 @@ CREATE TABLE tb_jabatan_dosen (
 	jabatan_id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY NOT NULL,
 	user_id uuid NOT NULL,CONSTRAINT fk_tb_jabatanDosen FOREIGN KEY (user_id) REFERENCES tb_users (user_id),
 	jabatan_fungsi varchar(255) NOT NULL,
-	nomor_sk CHAR (100) UNIQUE NOT NULL,
+	nomor_sk  varchar(255) UNIQUE NOT NULL,
 	tgl_mulai DATE NOT NULL,
 	kel_penelitian FLOAT,
 	kel_pengab_msyrkt FLOAT,
 	kel_keg_penunjang FLOAT,                              
 	file_jabatan varchar(100),
+	status INT DEFAULT 0,
 	created_at TIMESTAMP,
 	updated_at TIMESTAMP,
 	deleted_at TIMESTAMP
-)
+);
 
 CREATE TABLE tb_kepangkatanDosen (
 	pangkat_id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY NOT NULL,
