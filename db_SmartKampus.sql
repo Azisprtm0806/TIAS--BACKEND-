@@ -98,18 +98,18 @@ CREATE TABLE tb_jabatan_dosen (
 CREATE TABLE tb_kepangkatanDosen (
 	pangkat_id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY NOT NULL,
 	user_id uuid NOT NULL,CONSTRAINT fk_tbkepangkatan FOREIGN KEY (user_id) REFERENCES tb_users (user_id),
-	golonganPangkat varchar(50) NOT NULL,
-	noSKkpt varchar(25) NOT NULL,
-	tglSK DATE NOT NULL,
-	tglMulaikpt DATE NOT NULL,
-	masaKerjaTahun INT ,
-	masaKerjaBulan INT,
-	filekpt varchar,
-	validasi varchar,
-	created_at TIMESTAMPTZ NOT NULL DEFAULT current_date,
+	gol_pangkat varchar(255) NOT NULL,
+	nomor_sk varchar(255) NOT NULL,
+	tgl_sk DATE NOT NULL,
+	tgl_mulai DATE NOT NULL,
+	masa_kerja_tahun INT,
+	masa_kerja_bulan INT,
+	status INT DEFAULT 0,
+	file varchar(255) NOT NULL,
+	created_at TIMESTAMP,
 	updated_at TIMESTAMP,
 	deleted_at TIMESTAMP
-)
+);
 
 CREATE TABLE tb_sertifikat (
 	sertifikat_id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY,

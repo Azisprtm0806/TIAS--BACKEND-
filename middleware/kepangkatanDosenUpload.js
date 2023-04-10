@@ -4,7 +4,7 @@ const path = require("path");
 // Set Up Storage for uploaded files
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, "public/dokumen-jabatan");
+    cb(null, "public/dokumen-kepangkatan");
   },
   filename: (req, file, cb) => {
     cb(
@@ -31,10 +31,10 @@ const fileUpload = multer({
   limits: {
     fileSize: 10000000, // 10 MB file size limit
   },
-}).single("file_jabatan");
+}).single("file");
 
 // Middleware function to use multer for file uploads
-const jabatanFungsiUpload = (req, res, next) => {
+const kepangkatanDosenUpload = (req, res, next) => {
   fileUpload(req, res, (err) => {
     if (err) {
       // Handle Multer errors
@@ -48,4 +48,4 @@ const jabatanFungsiUpload = (req, res, next) => {
   });
 };
 
-module.exports = { jabatanFungsiUpload };
+module.exports = { kepangkatanDosenUpload };

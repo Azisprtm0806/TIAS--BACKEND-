@@ -2,7 +2,7 @@ const asyncHandler = require("express-async-handler");
 const DB = require("../../database");
 const path = require("path");
 const fs = require("fs-extra");
-const { unixTimestamp, convertDate, date, dateToUnix } = require("../../utils");
+const { unixTimestamp, convertDate } = require("../../utils");
 
 exports.addDataJabatan = asyncHandler(async (req, res) => {
   const userLoginId = req.user.user_id;
@@ -13,23 +13,16 @@ exports.addDataJabatan = asyncHandler(async (req, res) => {
 
   if (user.rows.length) {
     const file = req.file;
-    const {
-      jabatan_fungsi,
-      nomor_sk,
-      tgl_mulai,
-      kel_penelitian,
-      kel_pengab_msyrkt,
-      kel_keg_penunjang,
-    } = req.body;
+    const data = req.body;
 
-    if (!jabatan_fungsi || !nomor_sk || !tgl_mulai || !file) {
+    if (!data.jabatan_fungsi || !data.nomor_sk || !data.tgl_mulai || !file) {
       res.status(400);
       throw new Error("Pleas fill in all the required fields.");
     }
 
     const existsNomerSK = await DB.query(
       "SELECT * FROM tb_jabatan_dosen WHERE nomor_sk = $1",
-      [nomor_sk]
+      [data.nomor_sk]
     );
 
     if (existsNomerSK.rows.length) {
@@ -40,20 +33,26 @@ exports.addDataJabatan = asyncHandler(async (req, res) => {
     const created_at = unixTimestamp;
     const convert = await convertDate(created_at);
 
+    const keys = [
+      "user_id",
+      ...Object.keys(data),
+      "file_jabatan",
+      "created_at",
+    ];
+    const values = [
+      userLoginId,
+      ...Object.values(data),
+      file.filename,
+      convert,
+    ];
+    const placeholders = keys.map((key, index) => `$${index + 1}`);
+
     // save data
     const saveData = await DB.query(
-      "INSERT INTO tb_jabatan_dosen(user_id, jabatan_fungsi, nomor_sk, tgl_mulai, kel_penelitian, kel_pengab_msyrkt, kel_keg_penunjang, file_jabatan, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) returning *",
-      [
-        user.rows[0].user_id,
-        jabatan_fungsi,
-        nomor_sk,
-        tgl_mulai,
-        kel_penelitian,
-        kel_pengab_msyrkt,
-        kel_keg_penunjang,
-        file.filename,
-        convert,
-      ]
+      `INSERT INTO tb_jabatan_dosen(${keys.join(
+        ", "
+      )}) VALUES (${placeholders.join(", ")}) returning *`,
+      values
     );
 
     if (saveData.rows) {
@@ -63,7 +62,7 @@ exports.addDataJabatan = asyncHandler(async (req, res) => {
       });
     } else {
       res.status(400);
-      throw new Error("Invalid data document.");
+      throw new Error("Invalid data.");
     }
   } else {
     res.status(404);
@@ -99,28 +98,19 @@ exports.editDataJabatan = asyncHandler(async (req, res) => {
 
   if (dataJabatan.rows.length) {
     const file = req.file;
-    const data = req.body;
 
-    if (!data.jabatan_fungsi || !data.nomor_sk || !data.tgl_mulai) {
-      res.status(400);
-      throw new Error("Pleas fill in all the required fields.");
-    }
-
-    const convertToUnix = dateToUnix(data.tgl_mulai);
-    const date = await convertDate(convertToUnix);
-
-    data.tgl_mulai = date;
-
-    const colums = Object.keys(data);
-    const setClause = colums
-      .map((column, index) => `${column} = $${index + 1}`)
-      .join(", ");
-
-    const values = Object.values(data);
     if (!file) {
+      const updated_at = unixTimestamp;
+      const convert = convertDate(updated_at);
+
+      const entries = Object.entries({ ...req.body, updated_at: convert });
+      const setQuery = entries
+        .map(([key, _], index) => `${key} = $${index + 1}`)
+        .join(", ");
+
       const saveData = await DB.query(
-        `UPDATE tb_jabatan_dosen SET ${setClause} WHERE jabatan_id = '${dataJabatan.rows[0].jabatan_id}' `,
-        [...values]
+        `UPDATE tb_jabatan_dosen SET ${setQuery} WHERE jabatan_id = '${dataJabatan.rows[0].jabatan_id}' `,
+        entries.map(([_, value]) => value)
       );
 
       res.status(201).json({
@@ -131,11 +121,21 @@ exports.editDataJabatan = asyncHandler(async (req, res) => {
       await fs.remove(
         path.join(`public/dokumen-jabatan/${dataJabatan.rows[0].file_jabatan}`)
       );
+      const updated_at = unixTimestamp;
+      const convert = convertDate(updated_at);
+
+      const entries = Object.entries({
+        ...req.body,
+        file_jabatan: file.filename,
+        updated_at: convert,
+      });
+      const setQuery = entries
+        .map(([key, _], index) => `${key} = $${index + 1}`)
+        .join(", ");
+
       const saveData = await DB.query(
-        `UPDATE tb_jabatan_dosen SET ${setClause}, file_jabatan = $${
-          colums.length + 1
-        } WHERE jabatan_id = '${dataJabatan.rows[0].jabatan_id}' `,
-        [...values, file.filename]
+        `UPDATE tb_jabatan_dosen SET ${setQuery} WHERE jabatan_id = '${dataJabatan.rows[0].jabatan_id}' `,
+        entries.map(([_, value]) => value)
       );
 
       res.status(201).json({
@@ -165,7 +165,9 @@ exports.deleteDataJabatan = asyncHandler(async (req, res) => {
   await fs.remove(
     path.join(`public/dokumen-jabatan/${findData.rows[0].file_jabatan}`)
   );
-  await DB.query("DELETE FROM tb_jabatan_dosen WHERE jabatan_id = $1", [jabId]);
+  await DB.query("DELETE FROM tb_jabatan_dosen WHERE jabatan_id = $1", [
+    findData.rows[0].jabatan_id,
+  ]);
 
   res.status(200).json({ message: "Data deleted successfully." });
 });

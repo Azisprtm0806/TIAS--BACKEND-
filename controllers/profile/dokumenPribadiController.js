@@ -63,24 +63,25 @@ exports.editDataDok = asyncHandler(async (req, res) => {
   const { dokId } = req.params;
 
   const dokumen = await DB.query(
-    "SELECT * FROM tb_dokumen_pribadi WHERE dok_id = $1",
+    "SELECT * FROM tb_dokumen_pribadi WHERE dokpribadi_id = $1",
     [dokId]
   );
 
   if (dokumen.rows.length) {
     const file = req.file;
-    const { nama_dok, jenis_dok } = req.body;
-    const oldData = dokumen.rows[0];
-
-    oldData.nama_dok = nama_dok || oldData.nama_dok;
-    oldData.jenis_dok = jenis_dok || oldData.jenis_dok;
 
     if (!file) {
       const updated_at = unixTimestamp;
-      const convert = await convertDate(updated_at);
+      const convert = convertDate(updated_at);
+
+      const entries = Object.entries({ ...req.body, updated_at: convert });
+      const setQuery = entries
+        .map(([key, _], index) => `${key} = $${index + 1}`)
+        .join(", ");
+
       const updateData = await DB.query(
-        "UPDATE tb_dokumen_pribadi SET nama_dok = $1, jenis_dok = $2, updated_at = $3 WHERE dokpribadi_id = $4 returning *",
-        [oldData.nama_dok, oldData.jenis_dok, convert, dokId]
+        `UPDATE tb_dokumen_pribadi SET ${setQuery} WHERE dokpribadi_id = '${dokumen.rows[0].dokpribadi_id}' returning *`,
+        entries.map(([_, value]) => value)
       );
 
       res.status(200).json({
@@ -88,12 +89,24 @@ exports.editDataDok = asyncHandler(async (req, res) => {
         data: updateData.rows[0],
       });
     } else {
-      await fs.remove(path.join(`public/dokumen-pribadi/${oldData.file_dok}`));
+      await fs.remove(
+        path.join(`public/dokumen-pribadi/${dokumen.rows[0].file_dok}`)
+      );
       const updated_at = unixTimestamp;
       const convert = await convertDate(updated_at);
+
+      const entries = Object.entries({
+        ...req.body,
+        file_dok: file.filename,
+        updated_at: convert,
+      });
+      const setQuery = entries
+        .map(([key, _], index) => `${key} = $${index + 1}`)
+        .join(", ");
+
       const updateData = await DB.query(
-        "UPDATE tb_dokumen_pribadi SET nama_dok = $1, jenis_dok = $2, file_dok = $3, updated_at = $4 WHERE dokpribadi_id = $5 returning *",
-        [oldData.nama_dok, oldData.jenis_dok, file.filename, convert, dokId]
+        `UPDATE tb_dokumen_pribadi SET ${setQuery} WHERE dokpribadi_id = '${dokumen.rows[0].dokpribadi_id}' returning *`,
+        entries.map(([_, value]) => value)
       );
 
       res.status(200).json({

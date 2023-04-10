@@ -25,18 +25,27 @@ const {
   editDataJabatan,
   deleteDataJabatan,
 } = require("../../controllers/profile/jabatanController");
-const { jabatanFungsiUpload } = require("../../middleware/jabatanFungsiUpload");
+const { jabatanDosenUpload } = require("../../middleware/jabatanDosenUpload");
+const {
+  kepangkatanDosenUpload,
+} = require("../../middleware/kepangkatanDosenUpload");
+const {
+  addDataKepangkatan,
+  getDataKepangkatan,
+  editDataKepangkatan,
+  deleteDataKepangkatan,
+} = require("../../controllers/profile/kepangkatanController");
 
 const router = express.Router();
 
-// DATA PRIBADI
+// ============= DATA PRIBADI ================
 router.post("/createData", protected, createDataPribadi);
 router.patch("/editData", protected, editDataPribadi);
 router.get("/getDataPribadi", protected, getDataPribadi);
 router.delete("/deleteData/:dataID", protected, adminOnly, deleteDataPribadi);
-// END DATA PRIBADI
+// ============= END DATA PRIBADI =============
 
-// DOKUMEN PRIBADI
+// ============= DOKUMEN PRIBADI ==============
 router.post(
   "/createDokumen",
   protected,
@@ -51,14 +60,14 @@ router.patch(
   editDataDok
 );
 router.delete("/deleteDokumen/:dokId", protected, deleteDataDok);
-// END DOKUMEN PRIBADI
+// ============ END DOKUMEN PRIBADI =============
 
-// JABATAN DOSEN
+// ============ JABATAN DOSEN =============
 router.post(
   "/addJabatan",
   protected,
   dosenOnly,
-  jabatanFungsiUpload,
+  jabatanDosenUpload,
   addDataJabatan
 );
 router.get("/getDataJabatan", protected, dosenOnly, getDataJabatan);
@@ -66,7 +75,7 @@ router.patch(
   "/editDataJabatan/:jabId",
   protected,
   dosenOnly,
-  jabatanFungsiUpload,
+  jabatanDosenUpload,
   editDataJabatan
 );
 router.delete(
@@ -75,6 +84,30 @@ router.delete(
   dosenOnly,
   deleteDataJabatan
 );
-// END JABATAN DOSEN
+// =============== END JABATAN DOSEN ================
+
+// =============== KEPANGKATAN DOSEN ================
+router.post(
+  "/addKepangkatan",
+  protected,
+  dosenOnly,
+  kepangkatanDosenUpload,
+  addDataKepangkatan
+);
+router.get("/getDataKepangkatan", protected, dosenOnly, getDataKepangkatan);
+router.patch(
+  "/editPangkat/:pangkatId",
+  protected,
+  dosenOnly,
+  kepangkatanDosenUpload,
+  editDataKepangkatan
+);
+router.delete(
+  "/deletePangkat/:pangkatId",
+  protected,
+  dosenOnly,
+  deleteDataKepangkatan
+);
+// ============== END KEPANGAKATAN DOSEN ==================
 
 module.exports = router;
