@@ -26,6 +26,16 @@ exports.changePasswordValidation = (data) => {
     oldPassword: Joi.string().required().label("Old Password"),
     password: PasswordComplexity().required().label("Password"),
   });
+  return schema.validate(data);
+};
 
+exports.formTesValidation = (data) => {
+  const schema = Joi.object({
+    nama_tes: Joi.string().required().label("Nama Tes"),
+    jenis_tes: Joi.string().required().label("Jenis Tes"),
+    penyelenggara: Joi.string().required().label("Penyelenggara"),
+    tgl_tes: Joi.date().required().label("Tanggal Tes"),
+    skor_tes: Joi.required().label("Skor Tes"),
+  });
   return schema.validate(data);
 };

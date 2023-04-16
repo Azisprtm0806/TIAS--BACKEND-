@@ -89,6 +89,24 @@ exports.getDataKepangkatan = asyncHandler(async (req, res) => {
   });
 });
 
+exports.detailDataKepangkatan = asyncHandler(async (req, res) => {
+  const { pangkatId } = req.params;
+
+  const findData = await DB.query(
+    "SELECT * FROM tb_kepangkatan_dosen WHERE pangkat_id = $1",
+    [pangkatId]
+  );
+
+  if (!findData.rows.length) {
+    res.status(404);
+    throw new Error("Data not found.");
+  }
+
+  res.status(201).json({
+    data: findData.rows[0],
+  });
+});
+
 exports.editDataKepangkatan = asyncHandler(async (req, res) => {
   const { pangkatId } = req.params;
 

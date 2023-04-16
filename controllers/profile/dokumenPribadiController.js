@@ -20,7 +20,7 @@ exports.createDokumenPribadi = asyncHandler(async (req, res) => {
     }
 
     const created_at = unixTimestamp;
-    const convert = await convertDate(created_at);
+    const convert = convertDate(created_at);
     const createData = await DB.query(
       "INSERT INTO tb_dokumen_pribadi(user_id, nama_dok, jenis_dok, file_dok, created_at) VALUES($1, $2, $3, $4, $5) returning *",
       [user.rows[0].user_id, nama_dok, jenis_dok, file.filename, convert]

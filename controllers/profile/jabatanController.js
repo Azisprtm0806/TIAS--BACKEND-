@@ -88,6 +88,24 @@ exports.getDataJabatan = asyncHandler(async (req, res) => {
   });
 });
 
+exports.detailDataJabatan = asyncHandler(async (req, res) => {
+  const { jabId } = req.params;
+
+  const findData = await DB.query(
+    "SELECT * FROM tb_jabatan_dosen WHERE jabatan_id = $1",
+    [jabId]
+  );
+
+  if (!findData.rows.length) {
+    res.status(404);
+    throw new Error("Data not found.");
+  }
+
+  res.status(201).json({
+    data: findData.rows[0],
+  });
+});
+
 exports.editDataJabatan = asyncHandler(async (req, res) => {
   const { jabId } = req.params;
 

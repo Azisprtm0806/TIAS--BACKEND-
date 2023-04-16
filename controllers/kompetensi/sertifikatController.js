@@ -2,6 +2,7 @@ const asyncHandler = require("express-async-handler");
 const DB = require("../../database");
 const path = require("path");
 const fs = require("fs-extra");
+const { unixTimestamp, convertDate } = require("../../utils");
 
 exports.createDataSerti = asyncHandler(async (req, res) => {
   const userLoginId = req.user.user_id;
@@ -11,39 +12,106 @@ exports.createDataSerti = asyncHandler(async (req, res) => {
 
   if (user.rows.length) {
     const file = req.file;
-    const { jenis_sertif, nama_sertif, penyelenggara, tgl_sertif } = req.body;
+    const data = req.body;
 
     if (
-      !file ||
-      !jenis_sertif ||
-      !nama_sertif ||
-      !penyelenggara ||
-      !tgl_sertif
+      !data.jenis_sertif ||
+      !data.bidang_studi ||
+      !data.nomor_sk ||
+      !data.penyelenggara ||
+      !data.tgl_sertif
     ) {
       res.status(400);
       throw new Error("Pleas fill in all the required fields.");
     }
 
-    const createData = await DB.query(
-      "INSERT INTO tb_sertifikat(user_id, jenis_sertif, nama_sertif, penyelenggara, tgl_sertif, file_sertif) VALUES($1, $2, $3, $4, $5, $6) returning *",
-      [
-        user.rows[0].user_id,
-        jenis_sertif,
-        nama_sertif,
-        penyelenggara,
-        tgl_sertif,
-        file.filename,
-      ]
+    if (!file) {
+      res.status(400);
+      throw new Error("Type of supporting document must be filled.");
+    }
+
+    if (!data.jenis_dok || !data.nama_dok || !data.keterangan) {
+      res.status(400);
+      throw new Error("Pleas fill in all the data document required fields.");
+    }
+
+    const created_at = unixTimestamp;
+    const convert = convertDate(created_at);
+
+    const keysDoct = [
+      "file",
+      "jenis_dok",
+      "nama_dok",
+      "keterangan",
+      "jenis_file",
+      "nama_file",
+      "created_at",
+    ];
+    const valuesDoct = [
+      file.filename,
+      data.jenis_dok,
+      data.nama_dok,
+      data.keterangan,
+      file.mimetype,
+      file.filename,
+      convert,
+    ];
+    const placeholdersDoct = keysDoct.map((key, index) => `$${index + 1}`);
+
+    // Save Dokumen
+    const saveDokumen = await DB.query(
+      `INSERT INTO tb_dokumen(${keysDoct.join(
+        ", "
+      )}) VALUES (${placeholdersDoct.join(", ")}) returning *`,
+      valuesDoct
     );
 
-    if (createData.rows.length) {
-      res.status(200).json({
-        message: "Successfull created data.",
-        data: createData.rows[0],
-      });
+    if (saveDokumen.rows.length) {
+      const keys = [
+        "user_id",
+        "dokumen_id",
+        "jenis_sertif",
+        "bidang_studi",
+        "nomor_sk",
+        "tgl_sertif",
+        "penyelenggara",
+        "created_at",
+      ];
+      const values = [
+        userLoginId,
+        saveDokumen.rows[0].dokumen_id,
+        data.jenis_sertif,
+        data.bidang_studi,
+        data.nomor_sk,
+        data.tgl_sertif,
+        data.penyelenggara,
+        convert,
+      ];
+      const placeholders = keys.map((key, index) => `$${index + 1}`);
+      // save data
+      const saveCertificate = await DB.query(
+        `INSERT INTO tb_sertifikat(${keys.join(
+          ", "
+        )}) VALUES (${placeholders.join(", ")}) returning *`,
+        values
+      );
+
+      if (saveCertificate.rows.length) {
+        const datasave = await DB.query(
+          "SELECT * FROM tb_sertifikat JOIN tb_dokumen USING(dokumen_id) WHERE tb_dokumen.dokumen_id = $1",
+          [saveCertificate.rows[0].dokumen_id]
+        );
+        res.status(200).json({
+          message: "Successfull created data.",
+          data: datasave.rows[0],
+        });
+      } else {
+        res.status(500);
+        throw new Error("Internal server error.");
+      }
     } else {
-      res.status(400);
-      throw new Error("Invalid sertification data.");
+      res.status(500);
+      throw new Error("Internal server error.");
     }
   } else {
     res.status(404);
@@ -53,15 +121,15 @@ exports.createDataSerti = asyncHandler(async (req, res) => {
 
 exports.getDataSertif = asyncHandler(async (req, res) => {
   const userLoginId = req.user.user_id;
-  const dataSertif = await DB.query(
+  const findData = await DB.query(
     "SELECT * FROM tb_sertifikat WHERE user_id = $1",
     [userLoginId]
   );
 
-  if (dataSertif.rows.length) {
+  if (findData.rows.length) {
     res.status(200).json({
       message: "Success get data.",
-      data: dataSertif.rows,
+      data: findData.rows,
     });
   } else {
     res.status(404);

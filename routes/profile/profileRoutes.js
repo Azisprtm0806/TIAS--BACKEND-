@@ -24,6 +24,7 @@ const {
   getDataJabatan,
   editDataJabatan,
   deleteDataJabatan,
+  detailDataJabatan,
 } = require("../../controllers/profile/jabatanController");
 const { jabatanDosenUpload } = require("../../middleware/jabatanDosenUpload");
 const {
@@ -34,6 +35,7 @@ const {
   getDataKepangkatan,
   editDataKepangkatan,
   deleteDataKepangkatan,
+  detailDataKepangkatan,
 } = require("../../controllers/profile/kepangkatanController");
 
 const router = express.Router();
@@ -71,6 +73,12 @@ router.post(
   addDataJabatan
 );
 router.get("/getDataJabatan", protected, dosenOnly, getDataJabatan);
+router.get(
+  "/detailDataJabatan/:jabId",
+  protected,
+  dosenOnly,
+  detailDataJabatan
+);
 router.patch(
   "/editDataJabatan/:jabId",
   protected,
@@ -95,6 +103,12 @@ router.post(
   addDataKepangkatan
 );
 router.get("/getDataKepangkatan", protected, dosenOnly, getDataKepangkatan);
+router.get(
+  "/detailDataPangkat/:pangkatId",
+  protected,
+  dosenOnly,
+  detailDataKepangkatan
+);
 router.patch(
   "/editPangkat/:pangkatId",
   protected,

@@ -114,12 +114,42 @@ CREATE TABLE tb_kepangkatanDosen (
 CREATE TABLE tb_sertifikat (
 	sertifikat_id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY,
 	user_id uuid NOT NULL, CONSTRAINT fk_tb_sertifikat FOREIGN KEY (user_id) REFERENCES tb_users (user_id),
+	dokumen_id uuid, CONSTRAINT fk_tb_dokumen FOREIGN KEY (dokumen_id) REFERENCES tb_dokumen (dokumen_id),
 	jenis_sertif varchar(255) NOT NULL,
-	nama_sertif varchar(255) NOT NULL,
+	bidang_studi varchar(255) NOT NULL,
+	nomor_sk varchar(255) NOT NULL,
 	penyelenggara varchar(255) NOT NULL,
-	tgl_sertif DATE NOT NULL
-	file_sertif varchar(255) NOT NULL,
-	created_at TIMESTAMP DEFAULT current_date,
+	tgl_sertif DATE NOT NULL,
+	created_at TIMESTAMP,
+	updated_at TIMESTAMP,
+	deleted_at TIMESTAMP
+);
+
+CREATE TABLE tb_tes(
+	tes_id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
+	user_id uuid NOT NULL, CONSTRAINT fk_tb_tes FOREIGN KEY (user_id) REFERENCES tb_users (user_id),
+	nama_tes varchar(255) NOT NULL,
+	jenis_tes varchar(255)NOT NULL,
+	penyelenggara varchar(255) NOT NULL,
+	tgl_tes DATE NOT NULL,
+	skor_tes varchar(255) NOT NULL,
+	file varchar(255) NOT NULL,
+	created_at TIMESTAMP,
+	updated_at TIMESTAMP,
+	deleted_at TIMESTAMP
+
+);
+
+
+CREATE TABLE tb_dokumen (
+	dokumen_id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
+	jenis_dok varchar(255) NOT NULL,
+	nama_dok varchar(255) NOT NULL,
+	jenis_file varchar(255) NOT NULL,
+	nama_file varchar(255) NOT NULL,
+	keterangan varchar(255) NOT NULL,
+	file varchar(255) NOT NULL,
+	created_at TIMESTAMP,
 	updated_at TIMESTAMP,
 	deleted_at TIMESTAMP
 )
