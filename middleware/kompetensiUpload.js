@@ -4,14 +4,24 @@ const path = require("path");
 // Set Up Storage for uploaded files
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, "public/sertifikat-tes");
+    if (file.fieldname === "file_serti") {
+      cb(null, "public/file-sertifikasi");
+    } else if (file.fieldname === "file_tes") {
+      cb(null, "public/file-tes");
+    }
   },
   filename: (req, file, cb) => {
-    // console.log(req);
-    cb(
-      null,
-      file.fieldname + "-" + Date.now() + path.extname(file.originalname)
-    );
+    if (file.fieldname === "file_serti") {
+      cb(
+        null,
+        file.fieldname + "-" + Date.now() + path.extname(file.originalname)
+      );
+    } else if (file.fieldname === "file_tes") {
+      cb(
+        null,
+        file.fieldname + "-" + Date.now() + path.extname(file.originalname)
+      );
+    }
   },
 });
 
@@ -32,12 +42,16 @@ const fileUpload = multer({
   limits: {
     fileSize: 10000000, // 10 MB file size limit
   },
-}).single("file");
+}).fields([
+  { name: "file_serti", maxCount: 1 },
+  { name: "file_tes", maxCount: 1 },
+]);
 
 // Middleware function to use multer for file uploads
 const kompetensiUpload = (req, res, next) => {
   fileUpload(req, res, (err) => {
     if (err) {
+      console.log(err);
       // Handle Multer errors
       if (err instanceof multer.MulterError) {
         return res.status(400).json({ message: err.message });

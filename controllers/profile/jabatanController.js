@@ -12,10 +12,21 @@ exports.addDataJabatan = asyncHandler(async (req, res) => {
   ]);
 
   if (user.rows.length) {
-    const file = req.file;
+    const file = req.files;
     const data = req.body;
 
-    if (!data.jabatan_fungsi || !data.nomor_sk || !data.tgl_mulai || !file) {
+    if (Object.keys(file).length === 0) {
+      res.status(400);
+      throw new Error("Please fill in one file.");
+    }
+
+    if (!data.jabatan_fungsi || !data.nomor_sk || !data.tgl_mulai) {
+      fs.unlink(file.file_jabatan[0].path, (err) => {
+        if (err) {
+          console.log(err);
+        }
+        return;
+      });
       res.status(400);
       throw new Error("Pleas fill in all the required fields.");
     }
@@ -26,23 +37,24 @@ exports.addDataJabatan = asyncHandler(async (req, res) => {
     );
 
     if (existsNomerSK.rows.length) {
+      fs.unlink(file.file_jabatan[0].path, (err) => {
+        if (err) {
+          console.log(err);
+        }
+        return;
+      });
       res.status(400);
       throw new Error("SK number already exists.");
     }
 
     const created_at = unixTimestamp;
-    const convert = await convertDate(created_at);
+    const convert = convertDate(created_at);
 
-    const keys = [
-      "user_id",
-      ...Object.keys(data),
-      "file_jabatan",
-      "created_at",
-    ];
+    const keys = ["user_id", ...Object.keys(data), "file", "created_at"];
     const values = [
       userLoginId,
       ...Object.values(data),
-      file.filename,
+      file.file_jabatan[0].filename,
       convert,
     ];
     const placeholders = keys.map((key, index) => `$${index + 1}`);
@@ -115,9 +127,9 @@ exports.editDataJabatan = asyncHandler(async (req, res) => {
   );
 
   if (dataJabatan.rows.length) {
-    const file = req.file;
+    const file = req.files;
 
-    if (!file) {
+    if (Object.keys(file).length === 0) {
       const updated_at = unixTimestamp;
       const convert = convertDate(updated_at);
 
@@ -137,14 +149,14 @@ exports.editDataJabatan = asyncHandler(async (req, res) => {
       });
     } else {
       await fs.remove(
-        path.join(`public/dokumen-jabatan/${dataJabatan.rows[0].file_jabatan}`)
+        path.join(`public/file-jabatan/${dataJabatan.rows[0].file}`)
       );
       const updated_at = unixTimestamp;
       const convert = convertDate(updated_at);
 
       const entries = Object.entries({
         ...req.body,
-        file_jabatan: file.filename,
+        file: file.file_jabatan[0].filename,
         updated_at: convert,
       });
       const setQuery = entries
@@ -180,9 +192,7 @@ exports.deleteDataJabatan = asyncHandler(async (req, res) => {
     throw new Error("Data not found.");
   }
 
-  await fs.remove(
-    path.join(`public/dokumen-jabatan/${findData.rows[0].file_jabatan}`)
-  );
+  await fs.remove(path.join(`public/file-jabatan/${findData.rows[0].file}`));
   await DB.query("DELETE FROM tb_jabatan_dosen WHERE jabatan_id = $1", [
     findData.rows[0].jabatan_id,
   ]);

@@ -66,27 +66,15 @@ exports.register = asyncHandler(async (req, res) => {
   if (npm_nidn.length === 12) {
     const role = "Mahasiswa";
     const created_at = unixTimestamp;
-    const convert = await convertDate(created_at);
+    const convert = convertDate(created_at);
     // Save user to DB
     const saveUser = await DB.query(
       `INSERT INTO tb_users(npm, email, password, role, user_agent, created_at) VALUES ($1, $2, $3, $4, $5, $6) returning *`,
       [npm_nidn, email, hashedPassword, role, userAgent, convert]
     );
 
-    const id = saveUser.rows[0].user_id;
-    const token = generateToken(id);
-
     if (saveUser.rows.length) {
-      const {
-        user_id,
-        npm,
-        email,
-        hashedPassword,
-        role,
-        userAgent,
-        isverified,
-        created_at,
-      } = saveUser.rows[0];
+      const { user_id, npm, email } = saveUser.rows[0];
 
       // Create verification token
       const verificationToken =
@@ -118,27 +106,16 @@ exports.register = asyncHandler(async (req, res) => {
       await sendMail(subject, send_to, send_from, template, name, link);
 
       // Send HTTP-only Cookie
-      res.cookie("token", token, {
-        path: "/",
-        httpOnly: true,
-        expires: new Date(Date.now() + 1000 * 86400), // 1 day
-        sameSite: "none",
-        secure: true,
-      });
+      // res.cookie("token", token, {
+      //   path: "/",
+      //   httpOnly: true,
+      //   expires: new Date(Date.now() + 1000 * 86400), // 1 day
+      //   sameSite: "none",
+      //   secure: true,
+      // });
 
       res.status(200).json({
-        message: "Succesfully created Account.",
-        data: {
-          user_id,
-          npm,
-          email,
-          hashedPassword,
-          role,
-          userAgent,
-          isverified,
-          created_at,
-          token,
-        },
+        message: `Verification Email Sent ${email}.`,
       });
     } else {
       res.status(400);
@@ -146,26 +123,23 @@ exports.register = asyncHandler(async (req, res) => {
     }
   } else if (npm_nidn.length === 10) {
     const role = "Dosen";
-    const convert = await convertDate(unixTimestamp);
+    const convert = convertDate(unixTimestamp);
     // Save user to DB
     const saveUser = await DB.query(
       `INSERT INTO tb_users(nidn, email, password, role, user_agent, created_at) VALUES ($1, $2, $3, $4, $5, $6) returning *`,
       [npm_nidn, email, hashedPassword, role, userAgent, convert]
     );
 
-    const id = saveUser.rows[0].user_id;
-    const token = generateToken(id);
-
     if (saveUser.rows.length) {
       const {
         user_id,
         nidn,
         email,
-        hashedPassword,
-        role,
-        userAgent,
-        isverified,
-        created_at,
+        // hashedPassword,
+        // role,
+        // userAgent,
+        // isverified,
+        // created_at,
       } = saveUser.rows[0];
 
       // Create verification token
@@ -175,9 +149,9 @@ exports.register = asyncHandler(async (req, res) => {
       const hashedToken = hashToken(verificationToken);
 
       const unix = unixTimestamp;
-      const createdAt = await convertDate(unix);
+      const createdAt = convertDate(unix);
       const unixExpires = expires_at;
-      const expiresAt = await convertDate(unixExpires);
+      const expiresAt = convertDate(unixExpires);
 
       await DB.query(
         "INSERT INTO token(user_id, verif_token, created_at, expires_at) VALUES ($1, $2, $3, $4)",
@@ -202,27 +176,16 @@ exports.register = asyncHandler(async (req, res) => {
       }
 
       // Send HTTP-only Cookie
-      res.cookie("token", token, {
-        path: "/",
-        httpOnly: true,
-        expires: new Date(Date.now() + 1000 * 86400), // 1 day
-        sameSite: "none",
-        secure: true,
-      });
+      // res.cookie("token", token, {
+      //   path: "/",
+      //   httpOnly: true,
+      //   expires: new Date(Date.now() + 1000 * 86400), // 1 day
+      //   sameSite: "none",
+      //   secure: true,
+      // });
 
       res.status(200).json({
-        message: "Succesfully created Account.",
-        data: {
-          user_id,
-          nidn,
-          email,
-          hashedPassword,
-          role,
-          userAgent,
-          isverified,
-          created_at,
-          token,
-        },
+        message: `Verification Email Sent ${email}.`,
       });
     } else {
       res.status(400);
@@ -369,6 +332,7 @@ exports.loginUser = asyncHandler(async (req, res) => {
         role,
         isverified,
         created_at,
+        token,
       },
     });
   } else {
@@ -642,7 +606,36 @@ exports.verifyUser = asyncHandler(async (req, res) => {
     user.rows[0].user_id,
   ]);
 
-  res.status(200).json({ message: "Account verification successfully" });
+  const token = generateToken(user.rows[0].user_id);
+
+  const { user_id, npm, nidn, email, role, userAgent, isverified, created_at } =
+    user.rows[0];
+
+  // Send HTTP-only Cookie
+  res.cookie("token", token, {
+    path: "/",
+    httpOnly: true,
+    expires: new Date(Date.now() + 1000 * 86400), // 1 day
+    sameSite: "none",
+    secure: true,
+  });
+
+  res
+    .status(200)
+    .json({
+      message: "Account verification successfully",
+      data: {
+        user_id,
+        npm,
+        nidn,
+        email,
+        role,
+        userAgent,
+        isverified,
+        created_at,
+        token,
+      },
+    });
 });
 
 exports.logout = asyncHandler(async (req, res) => {

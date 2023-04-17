@@ -49,8 +49,8 @@ CREATE TABLE tb_data_pribadi (
 	warga_negara varchar(100) NOT NULL,
 	email varchar(255) UNIQUE NOT NULL,
 	alamat varchar(100) NOT NULL,
-	RT varchar(25) NOT NULL,
-	RW varchar(25) NOT NULL,
+	RT INT NOT NULL,
+	RW INT NOT NULL,
 	desa_kelurahan varchar(100) NOT NULL,
 	kota_kabupaten varchar(100) NOT NULL,
 	provinsi varchar(100) NOT NULL,
@@ -72,7 +72,7 @@ CREATE TABLE tb_dokumen_pribadi (
 	user_id uuid NOT NULL, CONSTRAINT fk_dokumen_pribadi FOREIGN KEY (user_id) REFERENCES tb_users (user_id),
 	nama_dok varchar(255) NOT NULL,
 	jenis_dok varchar(255) NOT NULL,
-	file_dok varchar(255) NOT NULL,
+	file varchar(255) NOT NULL,
 	status INT DEFAULT 0,
 	created_at TIMESTAMP,
 	updated_at TIMESTAMP,
@@ -88,7 +88,7 @@ CREATE TABLE tb_jabatan_dosen (
 	kel_penelitian FLOAT,
 	kel_pengab_msyrkt FLOAT,
 	kel_keg_penunjang FLOAT,                              
-	file_jabatan varchar(100),
+	file varchar(100),
 	status INT DEFAULT 0,
 	created_at TIMESTAMP,
 	updated_at TIMESTAMP,
@@ -111,15 +111,18 @@ CREATE TABLE tb_kepangkatanDosen (
 	deleted_at TIMESTAMP
 );
 
-CREATE TABLE tb_sertifikat (
+CREATE TABLE tb_sertifikasi (
 	sertifikat_id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY,
-	user_id uuid NOT NULL, CONSTRAINT fk_tb_sertifikat FOREIGN KEY (user_id) REFERENCES tb_users (user_id),
-	dokumen_id uuid, CONSTRAINT fk_tb_dokumen FOREIGN KEY (dokumen_id) REFERENCES tb_dokumen (dokumen_id),
-	jenis_sertif varchar(255) NOT NULL,
+	user_id uuid NOT NULL, CONSTRAINT fk_tb_sertifikasi FOREIGN KEY (user_id) REFERENCES tb_users (user_id),
+	jenis_serti varchar(255) NOT NULL,
+	nama_serti varchar(255) NOT NULL,
 	bidang_studi varchar(255) NOT NULL,
 	nomor_sk varchar(255) NOT NULL,
-	penyelenggara varchar(255) NOT NULL,
-	tgl_sertif DATE NOT NULL,
+	tgl_serti DATE NOT NULL,
+	nomor_peserta varchar(255),
+	nomor_regist varchar(255),
+	status INT DEFAULT 0,
+	file varchar(255) NOT NULL,
 	created_at TIMESTAMP,
 	updated_at TIMESTAMP,
 	deleted_at TIMESTAMP
@@ -137,7 +140,6 @@ CREATE TABLE tb_tes(
 	created_at TIMESTAMP,
 	updated_at TIMESTAMP,
 	deleted_at TIMESTAMP
-
 );
 
 

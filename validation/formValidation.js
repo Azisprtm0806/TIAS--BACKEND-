@@ -30,6 +30,7 @@ exports.changePasswordValidation = (data) => {
 };
 
 exports.formTesValidation = (data) => {
+  console.log(data);
   const schema = Joi.object({
     nama_tes: Joi.string().required().label("Nama Tes"),
     jenis_tes: Joi.string().required().label("Jenis Tes"),

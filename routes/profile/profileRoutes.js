@@ -17,19 +17,12 @@ const {
   adminOnly,
 } = require("../../middleware/authMiddleware");
 const {
-  dokumenPribadiUpload,
-} = require("../../middleware/dokumenPribadiUpload");
-const {
   addDataJabatan,
   getDataJabatan,
   editDataJabatan,
   deleteDataJabatan,
   detailDataJabatan,
 } = require("../../controllers/profile/jabatanController");
-const { jabatanDosenUpload } = require("../../middleware/jabatanDosenUpload");
-const {
-  kepangkatanDosenUpload,
-} = require("../../middleware/kepangkatanDosenUpload");
 const {
   addDataKepangkatan,
   getDataKepangkatan,
@@ -37,6 +30,7 @@ const {
   deleteDataKepangkatan,
   detailDataKepangkatan,
 } = require("../../controllers/profile/kepangkatanController");
+const { profileUpload } = require("../../middleware/profileUpload");
 
 const router = express.Router();
 
@@ -48,30 +42,14 @@ router.delete("/deleteData/:dataID", protected, adminOnly, deleteDataPribadi);
 // ============= END DATA PRIBADI =============
 
 // ============= DOKUMEN PRIBADI ==============
-router.post(
-  "/createDokumen",
-  protected,
-  dokumenPribadiUpload,
-  createDokumenPribadi
-);
+router.post("/createDokumen", protected, profileUpload, createDokumenPribadi);
 router.get("/getDokumen", protected, getDokPribadi);
-router.patch(
-  "/editDokumen/:dokId",
-  protected,
-  dokumenPribadiUpload,
-  editDataDok
-);
+router.patch("/editDokumen/:dokId", protected, profileUpload, editDataDok);
 router.delete("/deleteDokumen/:dokId", protected, deleteDataDok);
 // ============ END DOKUMEN PRIBADI =============
 
 // ============ JABATAN DOSEN =============
-router.post(
-  "/addJabatan",
-  protected,
-  dosenOnly,
-  jabatanDosenUpload,
-  addDataJabatan
-);
+router.post("/addJabatan", protected, dosenOnly, profileUpload, addDataJabatan);
 router.get("/getDataJabatan", protected, dosenOnly, getDataJabatan);
 router.get(
   "/detailDataJabatan/:jabId",
@@ -83,7 +61,7 @@ router.patch(
   "/editDataJabatan/:jabId",
   protected,
   dosenOnly,
-  jabatanDosenUpload,
+  profileUpload,
   editDataJabatan
 );
 router.delete(
@@ -99,7 +77,7 @@ router.post(
   "/addKepangkatan",
   protected,
   dosenOnly,
-  kepangkatanDosenUpload,
+  profileUpload,
   addDataKepangkatan
 );
 router.get("/getDataKepangkatan", protected, dosenOnly, getDataKepangkatan);
@@ -113,7 +91,7 @@ router.patch(
   "/editPangkat/:pangkatId",
   protected,
   dosenOnly,
-  kepangkatanDosenUpload,
+  profileUpload,
   editDataKepangkatan
 );
 router.delete(

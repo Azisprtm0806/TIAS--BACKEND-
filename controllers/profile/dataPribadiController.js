@@ -41,6 +41,16 @@ exports.createDataPribadi = asyncHandler(async (req, res) => {
     throw new Error("Pleas fill in all the required fields.");
   }
 
+  const findNik = await DB.query(
+    "SELECT * FROM tb_data_pribadi WHERE nik = $1",
+    [data.nik]
+  );
+
+  if (findNik.rows.length) {
+    res.status(400);
+    throw new Error("NIK already.");
+  }
+
   if (data.nik.length !== 16) {
     res.status(400);
     throw new Error("NIK must be with 16 digits.");

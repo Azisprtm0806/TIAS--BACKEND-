@@ -4,7 +4,7 @@ const path = require("path");
 const fs = require("fs-extra");
 const { unixTimestamp, convertDate } = require("../../utils");
 
-exports.createDataTes = asyncHandler(async (req, res) => {
+exports.createDataSerti = asyncHandler(async (req, res) => {
   const userLoginId = req.user.user_id;
 
   const user = await DB.query("SELECT * FROM tb_users WHERE user_id = $1", [
@@ -19,14 +19,14 @@ exports.createDataTes = asyncHandler(async (req, res) => {
       res.status(400);
       throw new Error("Please fill in one file.");
     }
+
     if (
-      !data.nama_tes ||
-      !data.jenis_tes ||
-      !data.penyelenggara ||
-      !data.tgl_tes ||
-      !data.skor_tes
+      !data.jenis_serti ||
+      !data.bidang_studi ||
+      !data.nomor_sk ||
+      !data.tgl_serti
     ) {
-      fs.unlink(file.file_tes[0].path, (err) => {
+      fs.unlink(file.file_serti[0].path, (err) => {
         if (err) {
           console.log(err);
         }
@@ -36,20 +36,20 @@ exports.createDataTes = asyncHandler(async (req, res) => {
       throw new Error("Pleas fill in all the required fields.");
     }
 
-    const existsNameTes = await DB.query(
-      "SELECT * FROM tb_tes WHERE nama_tes = $1",
-      [data.nama_tes]
+    const existsNomorSK = await DB.query(
+      "SELECT * FROM tb_sertifikasi WHERE nomor_sk = $1",
+      [data.nomor_sk]
     );
 
-    if (existsNameTes.rows.length) {
-      fs.unlink(file.file_tes[0].path, (err) => {
+    if (existsNomorSK.rows.length) {
+      fs.unlink(file.file_serti[0].path, (err) => {
         if (err) {
           console.log(err);
         }
         return;
       });
       res.status(400);
-      throw new Error("Name of TES already exists.");
+      throw new Error("Nomor SK already exists.");
     }
 
     const created_at = unixTimestamp;
@@ -59,16 +59,16 @@ exports.createDataTes = asyncHandler(async (req, res) => {
     const values = [
       userLoginId,
       ...Object.values(data),
-      file.file_tes[0].filename,
+      file.file_serti[0].filename,
       convert,
     ];
     const placeholders = keys.map((key, index) => `$${index + 1}`);
 
     // save data
     const saveData = await DB.query(
-      `INSERT INTO tb_tes(${keys.join(", ")}) VALUES (${placeholders.join(
+      `INSERT INTO tb_sertifikasi(${keys.join(
         ", "
-      )}) returning *`,
+      )}) VALUES (${placeholders.join(", ")}) returning *`,
       values
     );
 
@@ -87,29 +87,31 @@ exports.createDataTes = asyncHandler(async (req, res) => {
   }
 });
 
-exports.getDataTes = asyncHandler(async (req, res) => {
+exports.getDataSerti = asyncHandler(async (req, res) => {
   const userLoginId = req.user.user_id;
 
-  const dataTes = await DB.query("SELECT * FROM tb_tes WHERE user_id = $1", [
-    userLoginId,
-  ]);
+  const dataSerti = await DB.query(
+    "SELECT * FROM tb_sertifikasi WHERE user_id = $1",
+    [userLoginId]
+  );
 
-  if (!dataTes.rows.length) {
+  if (!dataSerti.rows.length) {
     res.status(404);
     throw new Error("Data not found.");
   }
 
   res.status(201).json({
-    data: dataTes.rows,
+    data: dataSerti.rows,
   });
 });
 
-exports.detailDataTes = asyncHandler(async (req, res) => {
-  const { tesId } = req.params;
+exports.detailDataSerti = asyncHandler(async (req, res) => {
+  const { certifId } = req.params;
 
-  const findData = await DB.query("SELECT * FROM tb_tes WHERE tes_id = $1", [
-    tesId,
-  ]);
+  const findData = await DB.query(
+    "SELECT * FROM tb_sertifikasi WHERE sertifikat_id = $1",
+    [certifId]
+  );
 
   if (!findData.rows.length) {
     res.status(404);
@@ -121,12 +123,13 @@ exports.detailDataTes = asyncHandler(async (req, res) => {
   });
 });
 
-exports.editDataTes = asyncHandler(async (req, res) => {
-  const { tesId } = req.params;
+exports.editDataSerti = asyncHandler(async (req, res) => {
+  const { certifId } = req.params;
 
-  const findData = await DB.query("SELECT * FROM tb_tes WHERE tes_id = $1", [
-    tesId,
-  ]);
+  const findData = await DB.query(
+    "SELECT * FROM tb_sertifikasi WHERE sertifikat_id = $1",
+    [certifId]
+  );
 
   if (findData.rows.length) {
     const file = req.files;
@@ -141,7 +144,7 @@ exports.editDataTes = asyncHandler(async (req, res) => {
         .join(", ");
 
       const saveData = await DB.query(
-        `UPDATE tb_tes SET ${setQuery} WHERE tes_id = '${findData.rows[0].tes_id}' `,
+        `UPDATE tb_sertifikasi SET ${setQuery} WHERE sertifikat_id = '${findData.rows[0].sertifikat_id}' `,
         entries.map(([_, value]) => value)
       );
 
@@ -150,14 +153,15 @@ exports.editDataTes = asyncHandler(async (req, res) => {
         data: saveData.rows[0],
       });
     } else {
-      console.log(findData.rows[0].file);
-      await fs.remove(path.join(`public/file-tes/${findData.rows[0].file}`));
+      await fs.remove(
+        path.join(`public/file-sertifikasi/${findData.rows[0].file}`)
+      );
       const updated_at = unixTimestamp;
       const convert = convertDate(updated_at);
 
       const entries = Object.entries({
         ...req.body,
-        file: file.file_tes[0].filename,
+        file: file.file_serti[0].filename,
         updated_at: convert,
       });
       const setQuery = entries
@@ -165,7 +169,7 @@ exports.editDataTes = asyncHandler(async (req, res) => {
         .join(", ");
 
       const saveData = await DB.query(
-        `UPDATE tb_tes SET ${setQuery} WHERE tes_id = '${findData.rows[0].tes_id}' `,
+        `UPDATE tb_sertifikasi SET ${setQuery} WHERE sertifikat_id = '${findData.rows[0].sertifikat_id}' `,
         entries.map(([_, value]) => value)
       );
 
@@ -180,21 +184,24 @@ exports.editDataTes = asyncHandler(async (req, res) => {
   }
 });
 
-exports.deleteTes = asyncHandler(async (req, res) => {
-  const { tesId } = req.params;
+exports.deleteDataSerti = asyncHandler(async (req, res) => {
+  const { certifId } = req.params;
 
-  const findData = await DB.query("SELECT * FROM tb_tes WHERE tes_id = $1", [
-    tesId,
-  ]);
+  const findData = await DB.query(
+    "SELECT * FROM tb_sertifikasi WHERE sertifikat_id = $1",
+    [certifId]
+  );
 
   if (!findData.rows.length) {
     res.status(400);
     throw new Error("Data not found.");
   }
 
-  await fs.remove(path.join(`public/file-tes/${findData.rows[0].file}`));
-  await DB.query("DELETE FROM tb_tes WHERE tes_id = $1", [
-    findData.rows[0].tes_id,
+  await fs.remove(
+    path.join(`public/file-sertifikasi/${findData.rows[0].file}`)
+  );
+  await DB.query("DELETE FROM tb_sertifikasi WHERE sertifikat_id = $1", [
+    findData.rows[0].sertifikat_id,
   ]);
 
   res.status(200).json({ message: "Data deleted successfully." });

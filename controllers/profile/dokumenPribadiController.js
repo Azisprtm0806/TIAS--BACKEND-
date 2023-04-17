@@ -11,10 +11,21 @@ exports.createDokumenPribadi = asyncHandler(async (req, res) => {
   ]);
 
   if (user.rows.length) {
-    const file = req.file;
+    const file = req.files;
     const { nama_dok, jenis_dok } = req.body;
 
-    if (!nama_dok || !jenis_dok || !file) {
+    if (Object.keys(file).length === 0) {
+      res.status(400);
+      throw new Error("Please fill in one file.");
+    }
+
+    if (!nama_dok || !jenis_dok) {
+      fs.unlink(file.file_dok_pribadi[0].path, (err) => {
+        if (err) {
+          console.log(err);
+        }
+        return;
+      });
       res.status(400);
       throw new Error("Pleas fill in all the required fields.");
     }
@@ -22,8 +33,14 @@ exports.createDokumenPribadi = asyncHandler(async (req, res) => {
     const created_at = unixTimestamp;
     const convert = convertDate(created_at);
     const createData = await DB.query(
-      "INSERT INTO tb_dokumen_pribadi(user_id, nama_dok, jenis_dok, file_dok, created_at) VALUES($1, $2, $3, $4, $5) returning *",
-      [user.rows[0].user_id, nama_dok, jenis_dok, file.filename, convert]
+      "INSERT INTO tb_dokumen_pribadi(user_id, nama_dok, jenis_dok, file, created_at) VALUES($1, $2, $3, $4, $5) returning *",
+      [
+        user.rows[0].user_id,
+        nama_dok,
+        jenis_dok,
+        file.file_dok_pribadi[0].filename,
+        convert,
+      ]
     );
 
     if (createData.rows.length) {
@@ -68,9 +85,9 @@ exports.editDataDok = asyncHandler(async (req, res) => {
   );
 
   if (dokumen.rows.length) {
-    const file = req.file;
+    const file = req.files;
 
-    if (!file) {
+    if (Object.keys(file).length === 0) {
       const updated_at = unixTimestamp;
       const convert = convertDate(updated_at);
 
@@ -90,14 +107,14 @@ exports.editDataDok = asyncHandler(async (req, res) => {
       });
     } else {
       await fs.remove(
-        path.join(`public/dokumen-pribadi/${dokumen.rows[0].file_dok}`)
+        path.join(`public/dokumen-pribadi/${dokumen.rows[0].file}`)
       );
       const updated_at = unixTimestamp;
-      const convert = await convertDate(updated_at);
+      const convert = convertDate(updated_at);
 
       const entries = Object.entries({
         ...req.body,
-        file_dok: file.filename,
+        file: file.file_dok_pribadi[0].filename,
         updated_at: convert,
       });
       const setQuery = entries
@@ -133,9 +150,7 @@ exports.deleteDataDok = asyncHandler(async (req, res) => {
     throw new Error("Data not found.");
   }
 
-  await fs.remove(
-    path.join(`public/dokumen-pribadi/${findData.rows[0].file_dok}`)
-  );
+  await fs.remove(path.join(`public/dokumen-pribadi/${findData.rows[0].file}`));
   await DB.query("DELETE FROM tb_dokumen_pribadi WHERE dokpribadi_id = $1", [
     dokId,
   ]);
