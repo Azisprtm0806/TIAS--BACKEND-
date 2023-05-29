@@ -136,11 +136,59 @@ CREATE TABLE tb_tes(
 	penyelenggara varchar(255) NOT NULL,
 	tgl_tes DATE NOT NULL,
 	skor_tes varchar(255) NOT NULL,
+	status INT DEFAULT 0,
 	file varchar(255) NOT NULL,
 	created_at TIMESTAMP,
 	updated_at TIMESTAMP,
 	deleted_at TIMESTAMP
 );
+
+CREATE TYPE area_Kerja AS ENUM ('Dalam Negri','Luar Negri');
+
+CREATE TABLE tb_riwayat_pekerjaan (
+	rwyt_pekerjaan_id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY NOT NULL,
+	user_id uuid NOT NULL, CONSTRAINT fk_tb_riwayatPendidikan FOREIGN KEY (user_id) REFERENCES tb_users (user_id),
+	bidang_usaha varchar(25) NOT NULL,
+	jenis_pekerjaan varchar(25) NOT NULL,
+	jabatan varchar(25) NOT NULL,
+	nama_instansi varchar(50) NOT NULL,
+	divisi varchar(25),
+	deskripsi TEXT,
+	mulai_Kerja DATE NOT NULL,
+	selesai_Kerja DATE,
+	area_Kerja VARCHAR (25),
+	pendapatan NUMERIC(20, 2) NOT NULL,
+	file VARCHAR(255) NOT NULL,
+	status INT DEFAULT 0,
+	created_at TIMESTAMP,
+	updated_at TIMESTAMP,
+	deleted_at TIMESTAMP
+);
+
+CREATE TABLE tb_pend_formal (
+	pend_id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
+	user_id uuid NOT NULL, CONSTRAINT fk_tb_pendidikanFormal FOREIGN KEY(user_id) REFERENCES tb_users (user_id),
+	asal varchar(255) NOT NULL,
+	jenjang_studi varchar(255) NOT NULL,
+	program_studi varchar(25),
+	gelar_akademik varchar(25),
+	tahun_masuk INT NOT NULL,
+	tahun_lulus INT NOT NULL,
+	tgl_lulus date,
+	nomor_induk varchar(255) UNIQUE,
+	jmlh_semester INT,
+	jmlh_sks INT,
+	ipk_lulus FLOAT(4),
+	no_sk_penyetaraan varchar(255) UNIQUE,
+	tgl_sk_penyetaraan varchar(255),
+	no_ijazah varchar(255) UNIQUE,
+	judul_tesis varchar(255),
+	file VARCHAR(255) NOT NULL,
+	status INT DEFAULT 0,
+	created_at TIMESTAMP,
+	updated_at TIMESTAMP,
+	deleted_at TIMESTAMP
+)
 
 
 CREATE TABLE tb_dokumen (
@@ -156,8 +204,97 @@ CREATE TABLE tb_dokumen (
 	deleted_at TIMESTAMP
 )
 
+CREATE TABLE tb_anggota_prof (
+	prof_id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY NOT NULL,
+	user_id uuid NOT NULL, CONSTRAINT fk_tb_prof FOREIGN KEY (user_id) REFERENCES tb_users (user_id),
+	nama_organisasi varchar(255) NOT NULL,
+	peran varchar(255) NOT NULL,
+	mulai_keanggotaan DATE NOT NULL,
+	selesai_keanggotaan DATE,
+	instansi_prof varchar(255),
+	file varchar(255),
+	status INT DEFAULT 0,
+	created_at TIMESTAMP,
+	updated_at TIMESTAMP,
+	deleted_at TIMESTAMP
+)
+
+CREATE TABLE tb_penghargaan (
+	penghargaan_id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY NOT NULL,
+	user_id uuid NOT NULL, CONSTRAINT fk_tb_penghargaan FOREIGN KEY (user_id) REFERENCES tb_users (user_id),
+	tingkat_peng varchar(255) NOT NULL,
+	jenis_peng varchar(255) NOT NULL,
+	nama_peng varchar(255) NOT NULL,
+	tahun_peng INT NOT NULL,
+	instansi_pemberi varchar(255) NOT NULL,
+	file varchar(255) NOT NULL,
+	status INT DEFAULT 0,
+	created_at TIMESTAMP,
+	updated_at TIMESTAMP,
+	deleted_at TIMESTAMP
+);
+
+CREATE TABLE tb_penelitian (
+	penelitian_id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY NOT NULL,
+	user_id uuid NOT NULL, CONSTRAINT fk_tb_penelitian FOREIGN KEY (user_id) REFERENCES tb_users (user_id),
+	judul_kegiatan varchar(255) NOT NULL,
+	kelompok_bidang varchar(255),
+	lokasi_kegiatan varchar(255) NOT NULL,
+	tahun_usulan INT NOT NULL,
+	tahun_kegiatan INT NOT NULL,
+	tahun_pelaksanaan INT NOT NULL,
+	lama_kegiatan varchar(255) NOT NULL,
+	no_sk_penugasan varchar(255),
+	tgl_sk_penugasan DATE,
+	status INT DEFAULT 0,
+	created_at TIMESTAMP,
+	updated_at TIMESTAMP,
+	deleted_at TIMESTAMP
+);
+
+
+CREATE TABLE angota_penelitian(
+	anggota_id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY NOT NULL,
+	penelitian_id uuid NOT NULL, CONSTRAINT fk_tb_penelitian FOREIGN KEY (penelitian_id) REFERENCES tb_penelitian (penelitian_id),
+	nama varchar(180) NOT NULL,
+	peran varchar(180) NOT NULL,
+	status BOOLEAN DEFAULT false
+);
+
+
+CREATE TABLE dokumen_penelitian(
+	dokumen_id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY NOT NULL,
+	penelitian_id uuid NOT NULL, CONSTRAINT fk_tb_penelitian FOREIGN KEY (penelitian_id) REFERENCES tb_penelitian (penelitian_id),
+	nama_dok varchar(180) NOT NULL,
+	keterangan TEXT,
+	tautan_dok varchar(255),
+	file varchar(255) NOT NULL,
+	created_at TIMESTAMP,
+	updated_at TIMESTAMP,
+	deleted_at TIMESTAMP
+);
+
 
 ---- ALL DONE -----
+CREATE TABLE tb_pembicara (
+	pembicara_id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY NOT NULL,
+	user_id uuid NOT NULL, CONSTRAINT fk_tbpembicara FOREIGN KEY (user_id) REFERENCES tb_users (user_id),
+	kategori_pembicara varchar(255) NOT NUL,
+	judul_makalah varchar(255) NOT NULL,
+	nama_pertemuan varchar(100) NOT NULL,
+	tingkat_pertemuan varchar(255),
+	penyelenggara varchar(255) NOT NULL,
+	tgl_pelaksanaan DATE NOT NULL,
+	bahasa varchar(255),
+	no_sk_penugasan varchar(255),
+	tgl_penugasan varchar(255),
+	status INT DEFAULT 0,
+	file varchar(255) NOT NULL,
+	created_at TIMESTAMP,
+	updated_at TIMESTAMP,
+	deleted_at TIMESTAMP
+)
+
 
 CREATE TABLE tb_dosen (
 	dosen_id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY NOT NULL,
@@ -177,46 +314,7 @@ CREATE TABLE tb_mhs (
 	deleted_at TIMESTAMP
 )
 
- CREATE TABLE tb_pendidikanFormal (
-	pendFormal_id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY,
-	user_id uuid NOT NULL, CONSTRAINT fk_tb_pendidikanFormal FOREIGN KEY (user_id) REFERENCES tb_users (user_id),
-	programStudi varchar(25) NOT NULL,
-	gelarAkademik varchar(25),
-	tahunMasuk INT,
-	tahunLulus INT,
-	nomorInduk CHAR (25) UNIQUE,
-	jmlhSmstrTmph INT,
-	jmlhSks INT,
-	ipkLulus FLOAT (4),
-	noIjazah varchar(25) UNIQUE,
-	judulTesis varchar(225),
-	filepend varchar,
-	validasi varchar,
-	created_at TIMESTAMPTZ NOT NULL DEFAULT current_date,
-	updated_at TIMESTAMP,
-	deleted_at TIMESTAMP
-)
 
-CREATE TABLE tb_riwayatPekerjaan (
-	pangkat_id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY NOT NULL,
-	user_id uuid NOT NULL, CONSTRAINT fk_tb_riwayatPendidikan FOREIGN KEY (user_id) REFERENCES tb_users (user_id),
-	dokumen_id uuid NOT NULL, CONSTRAINT fk_tb_riwayatpekerjaan FOREIGN KEY (dokumen_id) REFERENCES tb_dokumen (dokumen_id),
-	bidangUsaha varchar(25) NOT NULL,
-	jenisPekerjaan varchar(25) NOT NULL,
-	jabatan varchar(25),
-	namaInstansi varchar(50) NOT NULL,
-	divisi varchar(25),
-	deskripsiKerja TEXT,
-	mulaiKerja DATE,
-	selesaiKerja DATE,
-	areaKerja VARCHAR (25),
-	pendapatan FLOAT,
-	filerp VARCHAR,
-	validasi varchar,
-	created_at TIMESTAMPTZ NOT NULL DEFAULT current_date,
-	updated_at TIMESTAMP,
-	deleted_at TIMESTAMP
-)
 
 CREATE TABLE tb_dataPribadi (
 	dataPribadi_id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY NOT NULL,
@@ -333,21 +431,7 @@ CREATE TABLE tb_pengabdian (
 	deleted_at TIMESTAMP
 )
 
-CREATE TABLE tb_pembicara (
-	pembicara_id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY NOT NULL,
-	user_id uuid NOT NULL, CONSTRAINT fk_tbpembicara FOREIGN KEY (user_id) REFERENCES tb_users (user_id),
-	dokumen_id uuid NOT NULL, CONSTRAINT fk_tb_pembicara FOREIGN KEY (dokumen_id) REFERENCES tb_dokumen (dokumen_id),
-	kegiatanPembicara varchar(100),
-	kategoriPembicara varchar(100),
-	judulMakalah varchar(100) NOT NULL,
-	namaPertemuanIlmiah varchar(100) NOT NULL,
-	tingkatPertemuan varchar(25),
-	penyelenggara varchar(100),
-	tglPelaksanaan DATE NOT NULL,
-	created_at TIMESTAMPTZ NOT NULL DEFAULT current_date,
-	updated_at TIMESTAMP,
-	deleted_at TIMESTAMP
-)
+
 
 CREATE TABLE tb_penulis (
 	penulis_id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY NOT NULL,
@@ -376,38 +460,6 @@ CREATE TABLE tb_HKI (
 	deleted_at TIMESTAMP
 )
 
-CREATE TABLE tb_anggotaProfesi (
-	anggotaProf_id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY NOT NULL,
-	user_id uuid NOT NULL, CONSTRAINT fk_tbanggotaprof FOREIGN KEY (user_id) REFERENCES tb_users (user_id),
-	dokumen_id uuid NOT NULL, CONSTRAINT fk_tb_anggotaprofesi FOREIGN KEY (dokumen_id) REFERENCES tb_dokumen (dokumen_id),
-	kegiatanProf varchar(200),
-	namaOrganisasi varchar(50),
-	peranOrganisasi varchar(25),
-	mulaiKeanggotaan DATE,
-	selesaiKeanggotaan DATE,
-	instansiProf varchar(100),
-	fileProf varchar,
-	validasi varchar,
-	created_at TIMESTAMPTZ NOT NULL DEFAULT current_date,
-	updated_at TIMESTAMP,
-	deleted_at TIMESTAMP
-)
-
-CREATE TABLE tb_penghargaan (
-	penghargaan_id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY NOT NULL,
-	user_id uuid NOT NULL, CONSTRAINT fk_tbpenghargaan FOREIGN KEY (user_id) REFERENCES tb_users (user_id),
-	kegiatanPenghargaan varchar(100),
-	tingkatPenghargaan varchar(100) NOT NULL,
-	jenisPenghargaan varchar(100) NOT NULL,
-	namaPenghargaan varchar(100) NOT NULL,
-	tahunpenghargaan INT NOT NULL,
-	instansiPemberi varchar(100),
-	filePenghargaan varchar,
-	validasi varchar,
-	created_at TIMESTAMPTZ NOT NULL DEFAULT current_date,
-	updated_at TIMESTAMP,
-	deleted_at TIMESTAMP
-)
 
 CREATE TABLE tb_dokumenPribadi (
 	dokumenPribadi_id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY NOT NULL,
@@ -490,37 +542,9 @@ CREATE TABLE tb_bimbinganMHSDSN (
 	deleted_at TIMESTAMP
 )
 
-CREATE TABLE tb_pengajaranDosen(
-	pengajaran_id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY NOT NULL,
-	user_id uuid NOT NULL,CONSTRAINT fk_tbpengajaranDosen FOREIGN KEY (user_id) REFERENCES tb_users (user_id),
-	namaMatkul varchar(100) NOT NULL,
-	jenisMatkul varchar(50) NOT NULL,
-	bidangKeilmuan varchar(255) NOT NULL,
-	kelas varchar(25)NOT NULL,
-	jmlhMhs INT,
-	SKS FLOAT NOT NULL,
-	created_at TIMESTAMPTZ NOT NULL DEFAULT current_date,
-	updated_at TIMESTAMP,
-	deleted_at TIMESTAMP
-)
 
-CREATE TABLE tb_penelitianDosen (
-	penelitianDsn_id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY NOT NULL,
-	user_id uuid NOT NULL, CONSTRAINT fk_tb_penelitian_dosen FOREIGN KEY (user_id) REFERENCES tb_users (user_id),
-	dokumen_id uuid NOT NULL, CONSTRAINT fk_tb_penelitiandosen FOREIGN KEY (dokumen_id)REFERENCES tb_dokumen (dokumen_id),
-	anggota_id uuid NOT NULL, CONSTRAINT fk_tb_penelitiann_dosen FOREIGN KEY (anggota_id)REFERENCES tb_anggota(anggota_id),
-	kegiatanPenelitian varchar(100),
-	judulKegiatanpnlt varchar(255) NOT NULL,
-	afisialisasipnlt varchar(100) NOT NULL,
-	kelBidang varchar(100),
-	lokasiKegiatanpnlt varchar(255),
-	lamaKegiatanpnlt varchar(20),
-	nomorSKpenugasanpnlt varchar(100),
-	tglSkPenugasanpnlt DATE,
-	created_at TIMESTAMPTZ NOT NULL DEFAULT current_date,
-	updated_at TIMESTAMP,
-	deleted_at TIMESTAMP
-)
+
+
 
 CREATE TABLE tb_publikasiKarya_dosen(
 	publikasi_id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY NOT NULL,
@@ -567,21 +591,21 @@ CREATE TABLE tb_pembelajaranMhs (
 	deleted_at TIMESTAMP
 )
 
-CREATE TABLE tb_penelitianMhs (
-	penelitian_id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY NOT NULL,
-	user_id uuid NOT NULL , CONSTRAINT fk_tb_penelitianMhs FOREIGN KEY (user_id) REFERENCES tb_users (user_id),
-	anggota_id uuid NOT NULL, CONSTRAINT fk_penelitianMhs FOREIGN KEY (anggota_id)REFERENCES tb_anggota(anggota_id),
-	dokumen_id uuid NOT NULL, CONSTRAINT fk_tbpenelitianMhs FOREIGN KEY (dokumen_id)REFERENCES tb_dokumen (dokumen_id),
-	kegiatanPenelitiMhs varchar(100),
-	judulKegiatanpm varchar(255) NOT NULL,
-	lokasiKegiatanpm CHARACTER VARYING(255),
-	tglSkpm DATE,
-	dosPem_satu varchar(50),
-	dosPem_dua varchar(50),
+CREATE TABLE tb_pengajaranDosen(
+	pengajaran_id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY NOT NULL,
+	user_id uuid NOT NULL,CONSTRAINT fk_tbpengajaranDosen FOREIGN KEY (user_id) REFERENCES tb_users (user_id),
+	namaMatkul varchar(100) NOT NULL,
+	jenisMatkul varchar(50) NOT NULL,
+	bidangKeilmuan varchar(255) NOT NULL,
+	kelas varchar(25)NOT NULL,
+	jmlhMhs INT,
+	SKS FLOAT NOT NULL,
 	created_at TIMESTAMPTZ NOT NULL DEFAULT current_date,
 	updated_at TIMESTAMP,
 	deleted_at TIMESTAMP
 )
+
+
 
 CREATE TABLE tb_publikasiKarya_Mhs (
 	publikasiMhs_id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY NOT NULL,

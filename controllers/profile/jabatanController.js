@@ -31,6 +31,21 @@ exports.addDataJabatan = asyncHandler(async (req, res) => {
       throw new Error("Pleas fill in all the required fields.");
     }
 
+    const existsJabatan = await DB.query(
+      `SELECT * FROM tb_jabatan_dosen WHERE CAST(user_id AS TEXT) LIKE '%${user.rows[0].user_id}%' AND jabatan_fungsi LIKE '%${data.jabatan_fungsi}%'`
+    );
+
+    if (existsJabatan.rows.length) {
+      fs.unlink(file.file_jabatan[0].path, (err) => {
+        if (err) {
+          console.log(err);
+        }
+        return;
+      });
+      res.status(400);
+      throw new Error("Jabatan/Fungsi already exists.");
+    }
+
     const existsNomerSK = await DB.query(
       "SELECT * FROM tb_jabatan_dosen WHERE nomor_sk = $1",
       [data.nomor_sk]
@@ -119,6 +134,7 @@ exports.detailDataJabatan = asyncHandler(async (req, res) => {
 });
 
 exports.editDataJabatan = asyncHandler(async (req, res) => {
+  const userLoginId = req.user.user_id;
   const { jabId } = req.params;
 
   const dataJabatan = await DB.query(
@@ -128,12 +144,58 @@ exports.editDataJabatan = asyncHandler(async (req, res) => {
 
   if (dataJabatan.rows.length) {
     const file = req.files;
+    const data = req.body;
+
+    console.log(data.jabatan_fungsi);
+
+    const existsJabatan = await DB.query(
+      `SELECT * FROM tb_jabatan_dosen WHERE CAST(user_id AS TEXT) LIKE '%${userLoginId}%' AND jabatan_fungsi LIKE '%${data.jabatan_fungsi}%'`
+    );
+
+    console.log(existsJabatan.rows[0]);
+
+    if (existsJabatan.rows.length) {
+      if (Object.keys(file).length === 0) {
+        res.status(400);
+        throw new Error("Jabatan/Fungsi already exists.");
+      } else {
+        fs.unlink(file.file_jabatan[0].path, (err) => {
+          if (err) {
+            console.log(err);
+          }
+          return;
+        });
+        res.status(400);
+        throw new Error("Jabatan/Fungsi already exists.");
+      }
+    }
+
+    const existsNomerSK = await DB.query(
+      "SELECT * FROM tb_jabatan_dosen WHERE nomor_sk = $1",
+      [data.nomor_sk]
+    );
+
+    if (existsNomerSK.rows.length) {
+      if (Object.keys(file).length === 0) {
+        res.status(400);
+        throw new Error("SK Number already exists.");
+      } else {
+        fs.unlink(file.file_jabatan[0].path, (err) => {
+          if (err) {
+            console.log(err);
+          }
+          return;
+        });
+        res.status(400);
+        throw new Error("SK Number already exists.");
+      }
+    }
 
     if (Object.keys(file).length === 0) {
       const updated_at = unixTimestamp;
       const convert = convertDate(updated_at);
 
-      const entries = Object.entries({ ...req.body, updated_at: convert });
+      const entries = Object.entries({ ...data, updated_at: convert });
       const setQuery = entries
         .map(([key, _], index) => `${key} = $${index + 1}`)
         .join(", ");
@@ -155,7 +217,7 @@ exports.editDataJabatan = asyncHandler(async (req, res) => {
       const convert = convertDate(updated_at);
 
       const entries = Object.entries({
-        ...req.body,
+        ...data,
         file: file.file_jabatan[0].filename,
         updated_at: convert,
       });

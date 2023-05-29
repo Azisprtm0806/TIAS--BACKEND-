@@ -36,6 +36,21 @@ exports.addDataKepangkatan = asyncHandler(async (req, res) => {
       throw new Error("Pleas fill in all the required fields.");
     }
 
+    const existsGolPangkat = await DB.query(
+      `SELECT * FROM tb_kepangkatan_dosen WHERE CAST(user_id AS TEXT) LIKE '%${user.rows[0].user_id}%' AND gol_pangkat LIKE '%${data.gol_pangkat}%'`
+    );
+
+    if (existsGolPangkat.rows.length) {
+      fs.unlink(file.file_kepangkatan[0].path, (err) => {
+        if (err) {
+          console.log(err);
+        }
+        return;
+      });
+      res.status(400);
+      throw new Error("Golongan/Pangkat already exists.");
+    }
+
     const existsNomerSK = await DB.query(
       "SELECT * FROM tb_kepangkatan_dosen WHERE nomor_sk = $1",
       [data.nomor_sk]
@@ -124,6 +139,7 @@ exports.detailDataKepangkatan = asyncHandler(async (req, res) => {
 });
 
 exports.editDataKepangkatan = asyncHandler(async (req, res) => {
+  const userLoginId = req.user.user_id;
   const { pangkatId } = req.params;
 
   const dataPangkat = await DB.query(
@@ -133,6 +149,48 @@ exports.editDataKepangkatan = asyncHandler(async (req, res) => {
 
   if (dataPangkat.rows.length) {
     const file = req.files;
+    const data = req.body;
+
+    const existsGolPangkat = await DB.query(
+      `SELECT * FROM tb_kepangkatan_dosen WHERE CAST(user_id AS TEXT) LIKE '%${userLoginId}%' AND gol_pangkat LIKE '%${data.gol_pangkat}%'`
+    );
+
+    if (existsGolPangkat.rows.length) {
+      if (Object.keys(file).length === 0) {
+        res.status(400);
+        throw new Error("Golongan/Pangkat already exists.");
+      } else {
+        fs.unlink(file.file_kepangkatan[0].path, (err) => {
+          if (err) {
+            console.log(err);
+          }
+          return;
+        });
+        res.status(400);
+        throw new Error("Golongan/Pangkat already exists.");
+      }
+    }
+
+    const existsNomerSK = await DB.query(
+      "SELECT * FROM tb_kepangkatan_dosen WHERE nomor_sk = $1",
+      [data.nomor_sk]
+    );
+
+    if (existsNomerSK.rows.length) {
+      if (Object.keys(file).length === 0) {
+        res.status(400);
+        throw new Error("SK number already exists.");
+      } else {
+        fs.unlink(file.file_kepangkatan[0].path, (err) => {
+          if (err) {
+            console.log(err);
+          }
+          return;
+        });
+        res.status(400);
+        throw new Error("SK number already exists.");
+      }
+    }
 
     if (Object.keys(file).length === 0) {
       const updated_at = unixTimestamp;

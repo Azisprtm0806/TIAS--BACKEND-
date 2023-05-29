@@ -22,6 +22,7 @@ exports.createDataSerti = asyncHandler(async (req, res) => {
 
     if (
       !data.jenis_serti ||
+      !data.nama_serti ||
       !data.bidang_studi ||
       !data.nomor_sk ||
       !data.tgl_serti
@@ -50,6 +51,21 @@ exports.createDataSerti = asyncHandler(async (req, res) => {
       });
       res.status(400);
       throw new Error("Nomor SK already exists.");
+    }
+
+    const existsNamaSerti = await DB.query(
+      `SELECT * FROM tb_sertifikasi WHERE CAST(user_id AS TEXT) LIKE '%${user.rows[0].user_id}%' AND nama_serti LIKE '%${data.nama_serti}%'`
+    );
+
+    if (existsNamaSerti.rows.length) {
+      fs.unlink(file.file_serti[0].path, (err) => {
+        if (err) {
+          console.log(err);
+        }
+        return;
+      });
+      res.status(400);
+      throw new Error("Name Certification already exists.");
     }
 
     const created_at = unixTimestamp;
@@ -124,6 +140,7 @@ exports.detailDataSerti = asyncHandler(async (req, res) => {
 });
 
 exports.editDataSerti = asyncHandler(async (req, res) => {
+  const userLoginId = req.user.user_id;
   const { certifId } = req.params;
 
   const findData = await DB.query(
@@ -133,12 +150,54 @@ exports.editDataSerti = asyncHandler(async (req, res) => {
 
   if (findData.rows.length) {
     const file = req.files;
+    const data = req.body;
+
+    const existsNomorSK = await DB.query(
+      "SELECT * FROM tb_sertifikasi WHERE nomor_sk = $1",
+      [data.nomor_sk]
+    );
+
+    if (existsNomorSK.rows.length) {
+      if (Object.keys(file).length === 0) {
+        res.status(400);
+        throw new Error("Nomor SK already exists.");
+      } else {
+        fs.unlink(file.file_serti[0].path, (err) => {
+          if (err) {
+            console.log(err);
+          }
+          return;
+        });
+        res.status(400);
+        throw new Error("Nomor SK already exists.");
+      }
+    }
+
+    const existsNamaSerti = await DB.query(
+      `SELECT * FROM tb_sertifikasi WHERE CAST(user_id AS TEXT) LIKE '%${userLoginId}%' AND nama_serti LIKE '%${data.nama_serti}%'`
+    );
+
+    if (existsNamaSerti.rows.length) {
+      if (Object.keys(file).length === 0) {
+        res.status(400);
+        throw new Error("Name Certification already exists.");
+      } else {
+        fs.unlink(file.file_serti[0].path, (err) => {
+          if (err) {
+            console.log(err);
+          }
+          return;
+        });
+        res.status(400);
+        throw new Error("Name Certification already exists.");
+      }
+    }
 
     if (Object.keys(file).length === 0) {
       const updated_at = unixTimestamp;
       const convert = convertDate(updated_at);
 
-      const entries = Object.entries({ ...req.body, updated_at: convert });
+      const entries = Object.entries({ ...data, updated_at: convert });
       const setQuery = entries
         .map(([key, _], index) => `${key} = $${index + 1}`)
         .join(", ");
@@ -160,7 +219,7 @@ exports.editDataSerti = asyncHandler(async (req, res) => {
       const convert = convertDate(updated_at);
 
       const entries = Object.entries({
-        ...req.body,
+        ...data,
         file: file.file_serti[0].filename,
         updated_at: convert,
       });

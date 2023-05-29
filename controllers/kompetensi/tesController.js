@@ -37,8 +37,7 @@ exports.createDataTes = asyncHandler(async (req, res) => {
     }
 
     const existsNameTes = await DB.query(
-      "SELECT * FROM tb_tes WHERE nama_tes = $1",
-      [data.nama_tes]
+      `SELECT * FROM tb_tes WHERE CAST(user_id AS TEXT) LIKE '%${user.rows[0].user_id}%' AND nama_tes LIKE '%${data.nama_tes}%'`
     );
 
     if (existsNameTes.rows.length) {
@@ -122,6 +121,7 @@ exports.detailDataTes = asyncHandler(async (req, res) => {
 });
 
 exports.editDataTes = asyncHandler(async (req, res) => {
+  const userLoginId = req.user.user_id;
   const { tesId } = req.params;
 
   const findData = await DB.query("SELECT * FROM tb_tes WHERE tes_id = $1", [
@@ -129,13 +129,34 @@ exports.editDataTes = asyncHandler(async (req, res) => {
   ]);
 
   if (findData.rows.length) {
+    const data = req.body;
     const file = req.files;
+
+    const existsNameTes = await DB.query(
+      `SELECT * FROM tb_tes WHERE CAST(user_id AS TEXT) LIKE '%${userLoginId}%' AND nama_tes LIKE '%${data.nama_tes}%'`
+    );
+
+    if (existsNameTes.rows.length) {
+      if (Object.keys(file).length === 0) {
+        res.status(400);
+        throw new Error("Name of TES already exists.");
+      } else {
+        fs.unlink(file.file_tes[0].path, (err) => {
+          if (err) {
+            console.log(err);
+          }
+          return;
+        });
+        res.status(400);
+        throw new Error("Name of TES already exists.");
+      }
+    }
 
     if (Object.keys(file).length === 0) {
       const updated_at = unixTimestamp;
       const convert = convertDate(updated_at);
 
-      const entries = Object.entries({ ...req.body, updated_at: convert });
+      const entries = Object.entries({ ...data, updated_at: convert });
       const setQuery = entries
         .map(([key, _], index) => `${key} = $${index + 1}`)
         .join(", ");
@@ -150,13 +171,12 @@ exports.editDataTes = asyncHandler(async (req, res) => {
         data: saveData.rows[0],
       });
     } else {
-      console.log(findData.rows[0].file);
       await fs.remove(path.join(`public/file-tes/${findData.rows[0].file}`));
       const updated_at = unixTimestamp;
       const convert = convertDate(updated_at);
 
       const entries = Object.entries({
-        ...req.body,
+        ...data,
         file: file.file_tes[0].filename,
         updated_at: convert,
       });

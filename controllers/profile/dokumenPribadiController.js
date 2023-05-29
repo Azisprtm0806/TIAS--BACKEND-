@@ -30,6 +30,21 @@ exports.createDokumenPribadi = asyncHandler(async (req, res) => {
       throw new Error("Pleas fill in all the required fields.");
     }
 
+    const existsNameDoc = await DB.query(
+      `SELECT * FROM tb_dokumen_pribadi WHERE CAST(user_id AS TEXT) LIKE '%${user.rows[0].user_id}%' AND nama_dok LIKE '%${nama_dok}%'`
+    );
+
+    if (existsNameDoc.rows.length) {
+      fs.unlink(file.file_dok_pribadi[0].path, (err) => {
+        if (err) {
+          console.log(err);
+        }
+        return;
+      });
+      res.status(400);
+      throw new Error("Name of document already exists.");
+    }
+
     const created_at = unixTimestamp;
     const convert = convertDate(created_at);
     const createData = await DB.query(
@@ -76,7 +91,26 @@ exports.getDokPribadi = asyncHandler(async (req, res) => {
   }
 });
 
+exports.detailDokPribadi = asyncHandler(async (req, res) => {
+  const { dokId } = req.params;
+
+  const findData = await DB.query(
+    "SELECT * FROM tb_dokumen_pribadi WHERE dokpribadi_id = $1",
+    [dokId]
+  );
+
+  if (!findData.rows.length) {
+    res.status(404);
+    throw new Error("Data not found.");
+  }
+
+  res.status(201).json({
+    data: findData.rows[0],
+  });
+});
+
 exports.editDataDok = asyncHandler(async (req, res) => {
+  const userLoginId = req.user.user_id;
   const { dokId } = req.params;
 
   const dokumen = await DB.query(
@@ -86,12 +120,33 @@ exports.editDataDok = asyncHandler(async (req, res) => {
 
   if (dokumen.rows.length) {
     const file = req.files;
+    const data = req.body;
+
+    const existsNameDoc = await DB.query(
+      `SELECT * FROM tb_dokumen_pribadi WHERE CAST(user_id AS TEXT) LIKE '%${userLoginId}%' AND nama_dok LIKE '%${data.nama_dok}%'`
+    );
+
+    if (existsNameDoc.rows.length) {
+      if (Object.keys(file).length === 0) {
+        res.status(400);
+        throw new Error("Name of document already exists.");
+      } else {
+        fs.unlink(file.file_dok_pribadi[0].path, (err) => {
+          if (err) {
+            console.log(err);
+          }
+          return;
+        });
+        res.status(400);
+        throw new Error("Name of document already exists.");
+      }
+    }
 
     if (Object.keys(file).length === 0) {
       const updated_at = unixTimestamp;
       const convert = convertDate(updated_at);
 
-      const entries = Object.entries({ ...req.body, updated_at: convert });
+      const entries = Object.entries({ ...data, updated_at: convert });
       const setQuery = entries
         .map(([key, _], index) => `${key} = $${index + 1}`)
         .join(", ");
@@ -113,7 +168,7 @@ exports.editDataDok = asyncHandler(async (req, res) => {
       const convert = convertDate(updated_at);
 
       const entries = Object.entries({
-        ...req.body,
+        ...data,
         file: file.file_dok_pribadi[0].filename,
         updated_at: convert,
       });

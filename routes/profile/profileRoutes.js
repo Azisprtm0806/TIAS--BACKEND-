@@ -10,6 +10,7 @@ const {
   getDokPribadi,
   editDataDok,
   deleteDataDok,
+  detailDokPribadi,
 } = require("../../controllers/profile/dokumenPribadiController");
 const {
   protected,
@@ -44,6 +45,7 @@ router.delete("/deleteData/:dataID", protected, adminOnly, deleteDataPribadi);
 // ============= DOKUMEN PRIBADI ==============
 router.post("/createDokumen", protected, profileUpload, createDokumenPribadi);
 router.get("/getDokumen", protected, getDokPribadi);
+router.get("/detailDokumen/:dokId", protected, detailDokPribadi);
 router.patch("/editDokumen/:dokId", protected, profileUpload, editDataDok);
 router.delete("/deleteDokumen/:dokId", protected, deleteDataDok);
 // ============ END DOKUMEN PRIBADI =============
