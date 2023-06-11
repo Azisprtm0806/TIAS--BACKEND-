@@ -4,24 +4,10 @@ const path = require("path");
 // Set Up Storage for uploaded files
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    if (file.fieldname === "file_pengabdian") {
-      cb(null, "public/file-pengabdian");
-    } else if (file.fieldname === "file_tes") {
-      cb(null, "public/file-tes");
-    }
+    cb(null, "public/dokumen-tgs-tambahan-dsn");
   },
   filename: (req, file, cb) => {
-    if (file.fieldname === "file_pengabdian") {
-      cb(
-        null,
-        file.fieldname + "-" + Date.now() + path.extname(file.originalname)
-      );
-    } else if (file.fieldname === "file_tes") {
-      cb(
-        null,
-        file.fieldname + "-" + Date.now() + path.extname(file.originalname)
-      );
-    }
+    cb(null, Date.now() + "-" + file.originalname);
   },
 });
 
@@ -40,15 +26,12 @@ const fileUpload = multer({
     }
   },
   limits: {
-    fileSize: 10000000, // 10 MB file size limit
+    fileSize: 20000000, // 10 MB file size limit
   },
-}).fields([
-  { name: "file_serti", maxCount: 1 },
-  { name: "file_tes", maxCount: 1 },
-]);
+}).single("file");
 
 // Middleware function to use multer for file uploads
-const pembicaraUpload = (req, res, next) => {
+const dokumenTgsTamabahanDsnUpload = (req, res, next) => {
   fileUpload(req, res, (err) => {
     if (err) {
       console.log(err);
@@ -63,4 +46,4 @@ const pembicaraUpload = (req, res, next) => {
   });
 };
 
-module.exports = { pembicaraUpload };
+module.exports = { dokumenTgsTamabahanDsnUpload };

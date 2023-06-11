@@ -252,15 +252,13 @@ CREATE TABLE tb_penelitian (
 	deleted_at TIMESTAMP
 );
 
-
 CREATE TABLE angota_penelitian(
 	anggota_id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY NOT NULL,
-	penelitian_id uuid NOT NULL, CONSTRAINT fk_tb_penelitian FOREIGN KEY (penelitian_id) REFERENCES tb_penelitian (penelitian_id),
-	nama varchar(180) NOT NULL,
+	penelitian_id uuid NOT NULL, CONSTRAINT fk_tb_anggota_penelitian FOREIGN KEY (penelitian_id) REFERENCES tb_penelitian (penelitian_id),
+	user_id uuid NOT NULL, CONSTRAINT fk_tb_anggota_user FOREIGN KEY (user_id) REFERENCES tb_users(user_id),
 	peran varchar(180) NOT NULL,
 	status BOOLEAN DEFAULT false
 );
-
 
 CREATE TABLE dokumen_penelitian(
 	dokumen_id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY NOT NULL,
@@ -274,26 +272,181 @@ CREATE TABLE dokumen_penelitian(
 	deleted_at TIMESTAMP
 );
 
+CREATE TABLE kolab_external(
+	ext_id uuid DEFAULT uuid_generate_v4() PRIMARY KEY NOT NULL,
+	nama varchar(180) NOT NULL,
+	negara varchar(180) NOT NULL,
+	jenkel jenis_kelamin NOT NULL,
+	nik CHAR(16) UNIQUE,
+	tanggal_lahir DATE ,
+	tempat_lahir varchar(255),
+	jalan TEXT,
+	RT INT,
+	RW INT,
+	desa_kelurahan varchar(100),
+	kota_kabupaten varchar(100),
+	provinsi varchar(100),
+	kode_pos CHAR(5),
+	no_hp varchar(13),
+	email varchar(180) UNIQUE,
+	status INT DEFAULT 0
+);
 
----- ALL DONE -----
+CREATE TABLE tb_tgs_tambahan_dosen (
+	tugastambahan_id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY NOT NULL,
+	user_id uuid NOT NULL, CONSTRAINT fk_tgstambahan FOREIGN KEY (user_id) REFERENCES tb_users (user_id),
+	jenis_tugas varchar(255) NOT NULL,
+	perguruan_tinggi varchar(255) NOT NULL,
+	unit_kerja varchar(255) NOT NULL,
+	no_sk_penugasan varchar(255) NOT NULL,
+	tgl_mulai_tugas DATE NOT NULL,
+	tgl_akhir_tugas DATE NOT NULL,
+	status INT DEFAULT 0,
+	created_at TIMESTAMP,
+	updated_at TIMESTAMP,
+	deleted_at TIMESTAMP
+)
+CREATE TABLE dokumen_tgs_tambahan(
+	dokumen_id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY NOT NULL,
+	tugastambahan_id uuid NOT NULL, CONSTRAINT fk_tb_dokumen_tgs_tambahan FOREIGN KEY (tugastambahan_id) REFERENCES tb_tgs_tambahan_dosen(tugastambahan_id),
+	nama_dok varchar(180) NOT NULL,
+	keterangan TEXT,
+	tautan_dok varchar(255),
+	file varchar(255) NOT NULL,
+	created_at TIMESTAMP,
+	updated_at TIMESTAMP,
+	deleted_at TIMESTAMP
+);
+
 CREATE TABLE tb_pembicara (
 	pembicara_id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY NOT NULL,
-	user_id uuid NOT NULL, CONSTRAINT fk_tbpembicara FOREIGN KEY (user_id) REFERENCES tb_users (user_id),
-	kategori_pembicara varchar(255) NOT NUL,
+	user_id uuid NOT NULL, CONSTRAINT fk_tgstambahan FOREIGN KEY (user_id) REFERENCES tb_users (user_id),
+	kategori_pembicara varchar(255) NOT NULL,
 	judul_makalah varchar(255) NOT NULL,
-	nama_pertemuan varchar(100) NOT NULL,
+	nama_pertemuan varchar(255) NOT NULL,
 	tingkat_pertemuan varchar(255),
 	penyelenggara varchar(255) NOT NULL,
 	tgl_pelaksanaan DATE NOT NULL,
 	bahasa varchar(255),
 	no_sk_penugasan varchar(255),
-	tgl_penugasan varchar(255),
+	tgl_sk_penugasan varchar(255),
 	status INT DEFAULT 0,
-	file varchar(255) NOT NULL,
 	created_at TIMESTAMP,
 	updated_at TIMESTAMP,
 	deleted_at TIMESTAMP
 )
+
+CREATE TABLE dokumen_pembicara(
+	dokumen_id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY NOT NULL,
+	pembicara_id uuid NOT NULL, CONSTRAINT fk_dokumen_pembicara FOREIGN KEY (pembicara_id) REFERENCES tb_pembicara(pembicara_id),
+	nama_dok varchar(180) NOT NULL,
+	keterangan TEXT,
+	tautan_dok varchar(255),
+	file varchar(255) NOT NULL,
+	created_at TIMESTAMP,
+	updated_at TIMESTAMP,
+	deleted_at TIMESTAMP
+);
+
+-- YANG DIATAS ALL DONE
+
+tb_publikasiKarya(
+	judulArtikel
+	jenisPublikasi
+	kategoriCapaian
+	namaJurnal
+	tautanJurnal
+	tglTerbitJurnal
+	penerbitJurnal
+	tautanEksternal
+	keterangan
+)
+
+CREATE TABLE tb_HKI (
+	jenisHki varchar (200),
+	judulHki varchar (255) NOT NULL,
+	tanggalterbitHki DATE,
+	keterangan TEXT,
+	created_at TIMESTAMPTZ NOT NULL DEFAULT current_date,
+	updated_at TIMESTAMP,
+	deleted_at TIMESTAMP
+)
+
+CREATE TABLE tb_pengabdian (
+	judulKegiatan varchar(200) NOT NULL,
+	afisialisasipengabdian varchar(100) NOT NULL,
+	kelompokBidang varchar(50),
+	lokasiKegiatan varchar(200),
+	lamaKegiatan varchar(200) NOT NULL,
+	noSkPenugasan varchar(200) NOT NULL,
+	tglSkPenugasan DATE NOT NULL,
+	created_at TIMESTAMPTZ NOT NULL DEFAULT current_date,
+	updated_at TIMESTAMP,
+	deleted_at TIMESTAMP
+)
+
+CREATE TABLE tb_pengajaranDosen(
+	namaMatkul varchar(100) NOT NULL,
+	jenisMatkul varchar(50) NOT NULL,
+	bidangKeilmuan varchar(255) NOT NULL,
+	kelas varchar(25)NOT NULL,
+	jmlhMhs INT,
+	SKS FLOAT NOT NULL,
+	created_at TIMESTAMPTZ NOT NULL DEFAULT current_date,
+	updated_at TIMESTAMP,
+	deleted_at TIMESTAMP
+)
+
+CREATE TABLE tb_tugasakhirmhsdsn (
+	pengujian_id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY NOT NULL,
+	user_id uuid NOT NULL, CONSTRAINT fk_pengujianMHSDSN FOREIGN KEY (user_id) REFERENCES tb_users (user_id),
+	dosen_id uuid NOT NULL, CONSTRAINT fk_tbpengujianMHSDSN FOREIGN KEY (dosen_id) REFERENCES tb_dosen (dosen_id),
+	mhs_id uuid NOT NULL, CONSTRAINT fk_tb_pengujianMHSDSN FOREIGN KEY (mhs_id) REFERENCES tb_mhs (mhs_id),
+	semester INT,
+	judulPengujian varchar(225) NOT NULL,
+	jenisBimbingan varchar(225),
+	keteranganAktivitas varchar (100),
+	programStudi varchar(100) NOT NULL,
+	noSKPenugasan varchar(100),
+	tgalPenugasan DATE,
+	lokasiKegiatan varchar(100),
+	created_at TIMESTAMPTZ NOT NULL DEFAULT current_date,
+	updated_at TIMESTAMP,
+	deleted_at TIMESTAMP
+)
+
+CREATE TABLE tb_bhnAjarDosen (
+	bahanAjar_id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY NOT NULL,
+	user_id uuid NOT NULL, CONSTRAINT fk_tbbhnAjarDosen FOREIGN KEY (user_id) REFERENCES tb_users (user_id),
+	dokumen_id uuid NOT NULL, CONSTRAINT fk_tb_bhnajar_dosen FOREIGN KEY (dokumen_id) REFERENCES tb_dokumen (dokumen_id),
+	penulis_id uuid, CONSTRAINT fk_tb_bhnAjarDosen FOREIGN KEY (penulis_id) REFERENCES tb_penulis (penulis_id),
+	jenisBhnAjar varchar(100) NOT NULL,
+	judulBhnAjar varchar(100) NOT NULL,
+	tglTerbit DATE,
+	penerbit varchar(100),
+	noSkPenugasan
+	tglSkpenugasan
+	created_at TIMESTAMPTZ NOT NULL DEFAULT current_date,
+	updated_at TIMESTAMP,
+	deleted_at TIMESTAMP
+)
+
+
+CREATE TABLE tb_pembelajaranMhs (
+	pengajaran_id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY NOT NULL,
+	user_id uuid NOT NULL,CONSTRAINT fk_pengajaranMhs FOREIGN KEY (user_id) REFERENCES tb_users (user_id),
+	kodeMatkul varchar(20) NOT NULL,
+	nmMatkul varchar(100) NOT NULL,
+	kelas varchar(10),
+	nilai CHAR NOT NULL,
+	totalSks INT NOT NULL,
+	semester INT,
+	created_at TIMESTAMPTZ NOT NULL DEFAULT current_date,
+	updated_at TIMESTAMP,
+	deleted_at TIMESTAMP
+)
+---- ALL DONE -----
+
 
 
 CREATE TABLE tb_dosen (
@@ -413,24 +566,6 @@ CREATE TABLE tb_anggota (
 	deleted_at TIMESTAMP
 )
 
-CREATE TABLE tb_pengabdian (
-	pengabdian_id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY NOT NULL,
-	user_id uuid NOT NULL, CONSTRAINT fk_tbpengabdian FOREIGN KEY (user_id) REFERENCES tb_users (user_id),
-	anggota_id uuid NOT NULL, CONSTRAINT fk_tblpengabdian FOREIGN KEY (anggota_id) REFERENCES tb_anggota (anggota_id),
-	dokumen_id uuid NOT NULL, CONSTRAINT fk_tb_pengabdian FOREIGN KEY (dokumen_id) REFERENCES tb_dokumen (dokumen_id),
-	Kegiatanpengabdian varchar(200),
-	judulKegiatan varchar(200) NOT NULL,
-	afisialisasipengabdian varchar(100) NOT NULL,
-	kelBidang varchar(50),
-	lokasiKegiatan varchar(200),
-	lamaKegiatan varchar(200) NOT NULL,
-	noSkPenugasan varchar(200) NOT NULL,
-	tglSkPenugasan DATE NOT NULL,
-	created_at TIMESTAMPTZ NOT NULL DEFAULT current_date,
-	updated_at TIMESTAMP,
-	deleted_at TIMESTAMP
-)
-
 
 
 CREATE TABLE tb_penulis (
@@ -444,21 +579,7 @@ CREATE TABLE tb_penulis (
 	deleted_at TIMESTAMP
 )
 
-CREATE TABLE tb_HKI (
-	hki_id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY NOT NULL,
-	user_id uuid NOT NULL, CONSTRAINT fk_tbHKI FOREIGN KEY (user_id) REFERENCES tb_users (user_id),
-	penulis_id uuid NOT NULL, CONSTRAINT fk_tb_HKI FOREIGN KEY (penulis_id) REFERENCES tb_penulis (penulis_id),
-	dokumen_id uuid NOT NULL, CONSTRAINT fk_tbLhki FOREIGN KEY (dokumen_id) REFERENCES tb_dokumen (dokumen_id),
-	kategorikegiatanHKI varchar(200) ,
-	jenisHki varchar (200),
-	kategoriCapaianHki varchar (200),
-	judulHki varchar (255) NOT NULL,
-	tanggalterbitHki DATE,
-	keterangan TEXT,
-	created_at TIMESTAMPTZ NOT NULL DEFAULT current_date,
-	updated_at TIMESTAMP,
-	deleted_at TIMESTAMP
-)
+
 
 
 CREATE TABLE tb_dokumenPribadi (
@@ -473,63 +594,15 @@ CREATE TABLE tb_dokumenPribadi (
 	deleted_at TIMESTAMP
 )
 
-CREATE TABLE tb_tgsTambahanDosen (
-	tugastambahan_id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY NOT NULL,
-	user_id uuid NOT NULL, CONSTRAINT fk_tgstambahan FOREIGN KEY (user_id) REFERENCES tb_users (user_id),
-	dokumen_id uuid NOT NULL, CONSTRAINT fk_tb_tgstambahan FOREIGN KEY (dokumen_id) REFERENCES tb_dokumen (dokumen_id),
-	kegiatandosen varchar(100) NOT NULL,
-	jenisTugas varchar(100) NOT NULL,
-	perguruanTinggi varchar(100) NOT NULL,
-	unitKerja varchar(100) NOT NULL,
-	noSKpenugasan varchar(100) NOT NULL,
-	tglmulaitugas DATE NOT NULL,
-	tglakhirtugas DATE NOT NULL,
-	filetgs varchar,
-	validasi varchar,
-	created_at TIMESTAMPTZ NOT NULL DEFAULT current_date,
-	updated_at TIMESTAMP,
-	deleted_at TIMESTAMP
-)
 
-CREATE TABLE tb_bhnAjarDosen (
-	bahanAjar_id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY NOT NULL,
-	user_id uuid NOT NULL, CONSTRAINT fk_tbbhnAjarDosen FOREIGN KEY (user_id) REFERENCES tb_users (user_id),
-	dokumen_id uuid NOT NULL, CONSTRAINT fk_tb_bhnajar_dosen FOREIGN KEY (dokumen_id) REFERENCES tb_dokumen (dokumen_id),
-	penulis_id uuid, CONSTRAINT fk_tb_bhnAjarDosen FOREIGN KEY (penulis_id) REFERENCES tb_penulis (penulis_id),
-	jenisBhnAjar varchar(100) NOT NULL,
-	judulBhnAjar varchar(100) NOT NULL,
-	tglTerbit DATE,
-	penerbit varchar(100),
-	filepenerbit varchar,
-	validasi varchar,
-	created_at TIMESTAMPTZ NOT NULL DEFAULT current_date,
-	updated_at TIMESTAMP,
-	deleted_at TIMESTAMP
-)
 
-CREATE TABLE tb_tugasakhirmhsdsn (
-	pengujian_id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY NOT NULL,
-	user_id uuid NOT NULL, CONSTRAINT fk_pengujianMHSDSN FOREIGN KEY (user_id) REFERENCES tb_users (user_id),
-	dosen_id uuid NOT NULL, CONSTRAINT fk_tbpengujianMHSDSN FOREIGN KEY (dosen_id) REFERENCES tb_dosen (dosen_id),
-	mhs_id uuid NOT NULL, CONSTRAINT fk_tb_pengujianMHSDSN FOREIGN KEY (mhs_id) REFERENCES tb_mhs (mhs_id),
-	semester INT,
-	judulPengujian varchar(225) NOT NULL,
-	jenisBimbingan varchar(225),
-	keteranganAktivitas varchar (100),
-	programStudi varchar(100) NOT NULL,
-	noSKPenugasan varchar(100),
-	tgalPenugasan DATE,
-	lokasiKegiatan varchar(100),
-	created_at TIMESTAMPTZ NOT NULL DEFAULT current_date,
-	updated_at TIMESTAMP,
-	deleted_at TIMESTAMP
-)
+
+
+
 
 CREATE TABLE tb_bimbinganMHSDSN (
-	bimbingan_id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY NOT NULL,
-	user_id uuid NOT NULL, CONSTRAINT fk_bimbinganMHSDSN FOREIGN KEY (user_id) REFERENCES tb_users (user_id),
-	dosen_id uuid NOT NULL, CONSTRAINT fk_tbbimbinganMHSDSN FOREIGN KEY (dosen_id) REFERENCES tb_dosen (dosen_id),
-	mhs_id uuid NOT NULL, CONSTRAINT fk_tb_bimbinganMHSDSN FOREIGN KEY (mhs_id) REFERENCES tb_mhs (mhs_id),
+	bimbingan_id,
+	user_id,
 	semesterbim varchar (25),
 	judulbim varchar(255) NOT NULL,
 	jenisbim varchar(100) NOT NULL,
@@ -542,7 +615,48 @@ CREATE TABLE tb_bimbinganMHSDSN (
 	deleted_at TIMESTAMP
 )
 
+tb_anggota_bimbingan{
+	bimbingan_id
+	user_id
+}
 
+
+
+
+CREATE TABLE tb_keluargaMhs (
+	keluargaMhs_id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY NOT NULL,
+	user_id uuid NOT NULL,CONSTRAINT fk_keluargaMhs FOREIGN KEY (user_id) REFERENCES tb_users (user_id),
+	statusKawin varchar(20),
+	namaIbuKandung varchar(100) NOT NULL,
+	namaAyahKandung varchar(100) NOT NULL,
+	created_at TIMESTAMPTZ NOT NULL DEFAULT current_date,
+	updated_at TIMESTAMP,
+	deleted_at TIMESTAMP
+)
+
+
+
+
+
+
+
+CREATE TABLE tb_publikasiKarya_Mhs (
+	publikasiMhs_id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY NOT NULL,
+	user_id uuid NOT NULL ,CONSTRAINT fk_tb_publikasiKarya_Mhs FOREIGN KEY (user_id) REFERENCES tb_users (user_id),
+	penulis_id uuid NOT NULL,CONSTRAINT fk_tb_publikasiKaryaMhs FOREIGN KEY (penulis_id) REFERENCES tb_penulis (penulis_id),
+	dokumen_id uuid NOT NULL, CONSTRAINT fk_tb_publikasi_KaryaMhs FOREIGN KEY (dokumen_id) REFERENCES tb_dokumen(dokumen_id),
+	kategoriKegiatanpm varchar(255),
+	judulArtikelpm varchar(255) NOT NULL,
+	jenispublispm varchar(100) NOT NULL,
+	kategoriCapaianpublispm VARCHAR (100),
+	tglTerbitpublispm DATE,
+	penerbitjrnlapm varchar(100),
+	tautanEksternalpm varchar(255),
+	keteranganpm TEXT,
+	created_at TIMESTAMPTZ NOT NULL DEFAULT current_date,
+	updated_at TIMESTAMP,
+	deleted_at TIMESTAMP
+)
 
 
 
@@ -561,65 +675,6 @@ CREATE TABLE tb_publikasiKarya_dosen(
 	penerbitjrnal varchar(100),
 	tautanEksternal varchar(255),
 	keterangan TEXT,
-	created_at TIMESTAMPTZ NOT NULL DEFAULT current_date,
-	updated_at TIMESTAMP,
-	deleted_at TIMESTAMP
-)
-
-CREATE TABLE tb_keluargaMhs (
-	keluargaMhs_id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY NOT NULL,
-	user_id uuid NOT NULL,CONSTRAINT fk_keluargaMhs FOREIGN KEY (user_id) REFERENCES tb_users (user_id),
-	statusKawin varchar(20),
-	namaIbuKandung varchar(100) NOT NULL,
-	namaAyahKandung varchar(100) NOT NULL,
-	created_at TIMESTAMPTZ NOT NULL DEFAULT current_date,
-	updated_at TIMESTAMP,
-	deleted_at TIMESTAMP
-)
-
-CREATE TABLE tb_pembelajaranMhs (
-	pengajaran_id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY NOT NULL,
-	user_id uuid NOT NULL,CONSTRAINT fk_pengajaranMhs FOREIGN KEY (user_id) REFERENCES tb_users (user_id),
-	kodeMatkul varchar(20) NOT NULL,
-	nmMatkul varchar(100) NOT NULL,
-	kelas varchar(10),
-	nilai CHAR NOT NULL,
-	totalSks INT NOT NULL,
-	semester INT,
-	created_at TIMESTAMPTZ NOT NULL DEFAULT current_date,
-	updated_at TIMESTAMP,
-	deleted_at TIMESTAMP
-)
-
-CREATE TABLE tb_pengajaranDosen(
-	pengajaran_id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY NOT NULL,
-	user_id uuid NOT NULL,CONSTRAINT fk_tbpengajaranDosen FOREIGN KEY (user_id) REFERENCES tb_users (user_id),
-	namaMatkul varchar(100) NOT NULL,
-	jenisMatkul varchar(50) NOT NULL,
-	bidangKeilmuan varchar(255) NOT NULL,
-	kelas varchar(25)NOT NULL,
-	jmlhMhs INT,
-	SKS FLOAT NOT NULL,
-	created_at TIMESTAMPTZ NOT NULL DEFAULT current_date,
-	updated_at TIMESTAMP,
-	deleted_at TIMESTAMP
-)
-
-
-
-CREATE TABLE tb_publikasiKarya_Mhs (
-	publikasiMhs_id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY NOT NULL,
-	user_id uuid NOT NULL ,CONSTRAINT fk_tb_publikasiKarya_Mhs FOREIGN KEY (user_id) REFERENCES tb_users (user_id),
-	penulis_id uuid NOT NULL,CONSTRAINT fk_tb_publikasiKaryaMhs FOREIGN KEY (penulis_id) REFERENCES tb_penulis (penulis_id),
-	dokumen_id uuid NOT NULL, CONSTRAINT fk_tb_publikasi_KaryaMhs FOREIGN KEY (dokumen_id) REFERENCES tb_dokumen(dokumen_id),
-	kategoriKegiatanpm varchar(255),
-	judulArtikelpm varchar(255) NOT NULL,
-	jenispublispm varchar(100) NOT NULL,
-	kategoriCapaianpublispm VARCHAR (100),
-	tglTerbitpublispm DATE,
-	penerbitjrnlapm varchar(100),
-	tautanEksternalpm varchar(255),
-	keteranganpm TEXT,
 	created_at TIMESTAMPTZ NOT NULL DEFAULT current_date,
 	updated_at TIMESTAMP,
 	deleted_at TIMESTAMP

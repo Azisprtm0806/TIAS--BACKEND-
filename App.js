@@ -7,8 +7,11 @@ const authRoutes = require("./routes/Authentication/authRoutes");
 const profileRoutes = require("./routes/profile/profileRoutes");
 const kualifikasiRoutes = require("./routes/kualifikasi/kualifikasiRoutes");
 const kompetensiRoutes = require("./routes/kompetensi/kompetensiRoutes");
+const kolabExtRoutes = require("./routes/kolaborator-external/kolabExternalRoutes");
 const penunjangRoutes = require("./routes/penunjang/penunjangRoutes");
+const tgsTambahanDsn = require("./routes/pelaks-pendidikan/tugasTambahanDsnRoutes");
 const penelitianRoutes = require("./routes/pelaks-penelitian/penelitianRoutes");
+const pembicaraRoutes = require("./routes/pelaks-pengabdian/pembicara/pembicaraRoutes");
 const errorHandler = require("./helper/errorHandler");
 
 const app = express();
@@ -23,12 +26,24 @@ app.use(
   })
 );
 
+// STATUS DATA
+// 0  Prosess
+// 1  Disetujui
+// 2  Ditolak
+
+// Website API
 app.use("/auth", authRoutes);
 app.use("/profile", profileRoutes);
 app.use("/kualifikasi", kualifikasiRoutes);
 app.use("/kompetensi", kompetensiRoutes);
 app.use("/penunjang", penunjangRoutes);
+app.use("/kolabExt", kolabExtRoutes);
+app.use("/tgsTamabahanDsn", tgsTambahanDsn);
 app.use("/penelitian", penelitianRoutes);
+app.use("/pengabdian/pembicara/", pembicaraRoutes);
+
+// Mobile Application API dibawah
+
 app.get("/", (req, res) => {
   res.send("Server Oke");
 });

@@ -11,6 +11,8 @@ const {
   editDokumenPenelitian,
   addAnggotaDosen,
   addAnggotaMhs,
+  deleteDataPenelitian,
+  editDataPenelitian,
 } = require("../../controllers/pelaks-penelitian/penelitianController");
 const {
   dokumenPenelitianUpload,
@@ -19,23 +21,27 @@ const {
 const router = express.Router();
 
 // ============= PENELITIAN ======================
-router.post("/addPenelitian", protected, addDataPenelitian);
+router.post(
+  "/addPenelitian",
+  protected,
+  dokumenPenelitianUpload,
+  addDataPenelitian
+);
 router.get("/getDatapenelitian", protected, getDataPenelitian);
 router.get("/detailPenelitian/:penelitianId", protected, detailDataPenelitian);
-// router.patch(
-//   "/editProfesi/:profId",
-//   protected,
-//   penunjangUpload,
-//   editDataProfesi
-// );
-// router.delete("/deleteProfesi/:profId", protected, deleteDataProfesi);
+router.patch(
+  "/editPenelitian/:penelitianId",
+  protected,
+  dokumenPenelitianUpload,
+  editDataPenelitian
+);
+router.delete(
+  "/deletePenelitian/:penelitianId",
+  protected,
+  deleteDataPenelitian
+);
 
 // ============= END PENELITIAN =====================
-
-// ============= ANGGOTA PENELITIAN ==================
-router.post("/anggotaDosen", protected, addAnggotaDosen);
-router.post("/anggotaMhs", protected, addAnggotaMhs);
-// ============= END ANGGOTA PENELITIAN ==============
 
 // ============= DOKUMEN PENELITIAN ==============
 router.post(
