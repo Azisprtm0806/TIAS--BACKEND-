@@ -49,7 +49,6 @@ exports.addDataPublikasi = asyncHandler(async (req, res) => {
       penerbit: data.penerbit,
       tautan_eksternal: data.tautan_eksternal,
       keterangan: data.keterangan,
-      status: data.status,
     };
 
     const created_at = unixTimestamp;

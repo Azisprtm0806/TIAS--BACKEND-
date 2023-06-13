@@ -86,8 +86,9 @@ exports.addDataPenelitian = asyncHandler(async (req, res) => {
 
     // ==============END PENELITIAN===================
 
-    // ==============ANGGOTA PENELITIAN===================
     const penelitianId = saveDataPenelitian.rows[0].penelitian_id;
+
+    // ==============ANGGOTA PENELITIAN===================
 
     JSON.parse(data.anggota_penelitian).forEach(async (anggota) => {
       const anggotaPenelitian = {

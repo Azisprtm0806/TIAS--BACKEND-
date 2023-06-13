@@ -42,7 +42,6 @@ exports.addDataHki = asyncHandler(async (req, res) => {
       judul_hki: data.judul_hki,
       tgl_terbit_hki: data.tgl_terbit_hki,
       keterangan: data.keterangan_hki,
-      status: data.status,
     };
 
     const created_at = unixTimestamp;
