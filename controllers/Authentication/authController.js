@@ -601,15 +601,15 @@ exports.verifyUser = asyncHandler(async (req, res) => {
   }
 
   // verify user
-  await DB.query("UPDATE tb_users SET isverified = $1 WHERE user_id = $2", [
-    true,
-    user.rows[0].user_id,
-  ]);
+  const verifyUser = await DB.query(
+    "UPDATE tb_users SET isverified = $1 WHERE user_id = $2",
+    [true, user.rows[0].user_id]
+  );
 
   const token = generateToken(user.rows[0].user_id);
 
-  const { user_id, npm, nidn, email, role, userAgent, isverified, created_at } =
-    user.rows[0];
+  const { npm, nidn, email, role, userAgent, isverified, created_at } =
+    verifyUser.rows[0];
 
   // Send HTTP-only Cookie
   res.cookie("token", token, {
@@ -620,22 +620,20 @@ exports.verifyUser = asyncHandler(async (req, res) => {
     secure: true,
   });
 
-  res
-    .status(200)
-    .json({
-      message: "Account verification successfully",
-      data: {
-        user_id,
-        npm,
-        nidn,
-        email,
-        role,
-        userAgent,
-        isverified,
-        created_at,
-        token,
-      },
-    });
+  res.status(200).json({
+    message: "Account verification successfully",
+    data: {
+      user_id,
+      npm,
+      nidn,
+      email,
+      role,
+      userAgent,
+      isverified,
+      created_at,
+      token,
+    },
+  });
 });
 
 exports.logout = asyncHandler(async (req, res) => {

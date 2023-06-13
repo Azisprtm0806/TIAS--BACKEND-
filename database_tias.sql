@@ -348,6 +348,46 @@ CREATE TABLE dokumen_pembicara(
 	deleted_at TIMESTAMP
 );
 
+CREATE TABLE tb_publikasi_karya(
+	publikasi_id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY NOT NULL,
+	user_id uuid NOT NULL,CONSTRAINT fk_tb_publikasiKarya_dosen FOREIGN KEY (user_id) REFERENCES tb_users (user_id),
+	judul_artikel varchar(255) NOT NULL,
+	jenis varchar(255) NOT NULL,
+	kategori_capain varchar(255),
+	nama_jurnal varchar(100) NOT NULL,
+	tautan_jurnal varchar(100),
+	tgl_terbit DATE,
+	penerbit varchar(100),
+	tautan_eksternal varchar(255),
+	keterangan TEXT,
+	status INT DEFAULT 0,
+	created_at TIMESTAMP,
+	updated_at TIMESTAMP,
+	deleted_at TIMESTAMP
+);
+
+CREATE TABLE dokumen_publikasi(
+	dokumen_id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY NOT NULL,
+	publikasi_id uuid NOT NULL, CONSTRAINT fk_dokumen_publikasi FOREIGN KEY (publikasi_id) REFERENCES tb_publikasi_karya(publikasi_id),
+	nama_dok varchar(180) NOT NULL,
+	keterangan TEXT,
+	tautan_dok varchar(255),
+	file varchar(255) NOT NULL,
+	created_at TIMESTAMP,
+	updated_at TIMESTAMP,
+	deleted_at TIMESTAMP
+);
+
+CREATE TABLE penulis_publikasi (
+	penulis_id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY NOT NULL,
+	publikasi_id uuid NOT NULL, CONSTRAINT fk_penulis_publikasi FOREIGN KEY (publikasi_id) REFERENCES tb_publikasi_karya(publikasi_id),
+	user_id uuid NOT NULL, CONSTRAINT fk_user_penulis_publikasi FOREIGN KEY (user_id) REFERENCES tb_users(user_id),
+	urutan INT,
+	afiliasi TEXT,
+	peran varchar(25),
+	correspond BOOLEAN
+);
+
 -- YANG DIATAS ALL DONE
 
 tb_publikasiKarya(
@@ -361,6 +401,8 @@ tb_publikasiKarya(
 	tautanEksternal
 	keterangan
 )
+
+
 
 CREATE TABLE tb_HKI (
 	jenisHki varchar (200),
@@ -568,16 +610,7 @@ CREATE TABLE tb_anggota (
 
 
 
-CREATE TABLE tb_penulis (
-	penulis_id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY NOT NULL,
-	user_id uuid NOT NULL, CONSTRAINT fk_tbpenulis FOREIGN KEY (user_id) REFERENCES tb_users (user_id),
-	urutanPenulis INT,
-	afiliasiPenulis TEXT,
-	peranPenulis varchar(25),
-	created_at TIMESTAMPTZ NOT NULL DEFAULT current_date,
-	updated_at TIMESTAMP,
-	deleted_at TIMESTAMP
-)
+
 
 
 
@@ -643,8 +676,6 @@ CREATE TABLE tb_keluargaMhs (
 CREATE TABLE tb_publikasiKarya_Mhs (
 	publikasiMhs_id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY NOT NULL,
 	user_id uuid NOT NULL ,CONSTRAINT fk_tb_publikasiKarya_Mhs FOREIGN KEY (user_id) REFERENCES tb_users (user_id),
-	penulis_id uuid NOT NULL,CONSTRAINT fk_tb_publikasiKaryaMhs FOREIGN KEY (penulis_id) REFERENCES tb_penulis (penulis_id),
-	dokumen_id uuid NOT NULL, CONSTRAINT fk_tb_publikasi_KaryaMhs FOREIGN KEY (dokumen_id) REFERENCES tb_dokumen(dokumen_id),
 	kategoriKegiatanpm varchar(255),
 	judulArtikelpm varchar(255) NOT NULL,
 	jenispublispm varchar(100) NOT NULL,
@@ -658,24 +689,3 @@ CREATE TABLE tb_publikasiKarya_Mhs (
 	deleted_at TIMESTAMP
 )
 
-
-
-CREATE TABLE tb_publikasiKarya_dosen(
-	publikasi_id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY NOT NULL,
-	user_id uuid NOT NULL,CONSTRAINT fk_tb_publikasiKarya_dosen FOREIGN KEY (user_id) REFERENCES tb_users (user_id),
-	penulis_id uuid NOT NULL ,CONSTRAINT fk_tb_publikasiKaryadosen FOREIGN KEY (penulis_id) REFERENCES tb_penulis (penulis_id),
-	dokumen_id uuid NOT NULL , CONSTRAINT fk_tb_publikasi_Karyadosen FOREIGN KEY (dokumen_id) REFERENCES tb_dokumen(dokumen_id),
-	kategoriKegiatanpublis varchar(255),
-	judulArtikel varchar(255) NOT NULL,
-	jenispublis varchar(100) NOT NULL,
-	kategoriCapaianpublis CHARACTER VARYING(100),
-	namaJurnal varchar(100) NOT NULL,
-	tautanJurnal varchar(100),
-	tglTerbitpublis DATE,
-	penerbitjrnal varchar(100),
-	tautanEksternal varchar(255),
-	keterangan TEXT,
-	created_at TIMESTAMPTZ NOT NULL DEFAULT current_date,
-	updated_at TIMESTAMP,
-	deleted_at TIMESTAMP
-)
