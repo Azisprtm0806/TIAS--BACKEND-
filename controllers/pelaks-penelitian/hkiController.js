@@ -4,8 +4,8 @@ const path = require("path");
 const fs = require("fs-extra");
 const { unixTimestamp, convertDate } = require("../../utils");
 
-// ====================  PUBLIKASI KARYA ==========================
-exports.addDataPublikasi = asyncHandler(async (req, res) => {
+// ====================  HKI ==========================
+exports.addDataHki = asyncHandler(async (req, res) => {
   const userLoginId = req.user.user_id;
 
   const user = await DB.query("SELECT * FROM tb_users WHERE user_id = $1", [
@@ -22,9 +22,7 @@ exports.addDataPublikasi = asyncHandler(async (req, res) => {
     }
 
     if (
-      !data.judul_artikel ||
-      !data.jenis ||
-      !data.nama_jurnal ||
+      !data.judul_hki ||
       !data.penulis ||
       !data.nama_dok ||
       !data.keterangan
@@ -39,36 +37,31 @@ exports.addDataPublikasi = asyncHandler(async (req, res) => {
       throw new Error("Pleas fill in all the required fields.");
     }
     // ==============PUBLIKASI KARYA===================
-    const dataPublikasi = {
-      judul_artikel: data.judul_artikel,
-      jenis: data.jenis,
-      kategori_capain: data.kategori_capain,
-      nama_jurnal: data.nama_jurnal,
-      tautan_jurnal: data.tautan_jurnal,
-      tgl_terbit: data.tgl_terbit,
-      penerbit: data.penerbit,
-      tautan_eksternal: data.tautan_eksternal,
-      keterangan: data.keterangan,
+    const dataHki = {
+      jenis_hki: data.jenis_hki,
+      judul_hki: data.judul_hki,
+      tgl_terbit_hki: data.tgl_terbit_hki,
+      keterangan: data.keterangan_hki,
       status: data.status,
     };
 
     const created_at = unixTimestamp;
     const convert = convertDate(created_at);
 
-    const keys = ["user_id", ...Object.keys(dataPublikasi), "created_at"];
-    const values = [userLoginId, ...Object.values(dataPublikasi), convert];
+    const keys = ["user_id", ...Object.keys(dataHki), "created_at"];
+    const values = [userLoginId, ...Object.values(dataHki), convert];
     const placeholders = keys.map((key, index) => `$${index + 1}`);
 
-    const saveDataPublikasi = await DB.query(
-      `INSERT INTO tb_publikasi_karya(${keys.join(
+    const saveDataHki = await DB.query(
+      `INSERT INTO tb_hki(${keys.join(", ")}) VALUES (${placeholders.join(
         ", "
-      )}) VALUES (${placeholders.join(", ")}) returning *`,
+      )}) returning *`,
       values
     );
 
     // ==============END PUBLIKASI KARYA===================
 
-    const publikasi_id = saveDataPublikasi.rows[0].publikasi_id;
+    const hki_id = saveDataHki.rows[0].hki_id;
 
     // ==============PENULIS===================
     JSON.parse(data.penulis).forEach(async (penulis) => {
@@ -80,14 +73,14 @@ exports.addDataPublikasi = asyncHandler(async (req, res) => {
         correspond: penulis.correspond,
       };
 
-      const keysDataPenulis = ["publikasi_id", ...Object.keys(dataPenulis)];
-      const valuesDataPenulis = [publikasi_id, ...Object.values(dataPenulis)];
+      const keysDataPenulis = ["hki_id", ...Object.keys(dataPenulis)];
+      const valuesDataPenulis = [hki_id, ...Object.values(dataPenulis)];
       const placeholdersDataPenulis = keysDataPenulis.map(
         (key, index) => `$${index + 1}`
       );
 
       await DB.query(
-        `INSERT INTO penulis_publikasi(${keysDataPenulis.join(
+        `INSERT INTO penulis_hki(${keysDataPenulis.join(
           ", "
         )}) VALUES (${placeholdersDataPenulis.join(", ")}) returning *`,
         valuesDataPenulis
@@ -95,31 +88,23 @@ exports.addDataPublikasi = asyncHandler(async (req, res) => {
     });
     // ==============END PENULIS===================
 
-    // ==============DOKUMEN PUBLIKASI===================
-    const dokumenPublikasi = {
+    // ==============DOKUMEN HKI===================
+    const dokumenHki = {
       nama_dok: data.nama_dok,
       keterangan: data.keterangan,
       tautan_dok: data.tautan_dok,
       file: file.filename,
     };
 
-    const keysDokumen = [
-      "publikasi_id",
-      ...Object.keys(dokumenPublikasi),
-      "created_at",
-    ];
-    const valuesDokumen = [
-      publikasi_id,
-      ...Object.values(dokumenPublikasi),
-      convert,
-    ];
+    const keysDokumen = ["hki_id", ...Object.keys(dokumenHki), "created_at"];
+    const valuesDokumen = [hki_id, ...Object.values(dokumenHki), convert];
     const placeholdersDokumen = keysDokumen.map(
       (key, index) => `$${index + 1}`
     );
 
     // save data dokumen penelitian
     await DB.query(
-      `INSERT INTO dokumen_publikasi(${keysDokumen.join(
+      `INSERT INTO dokumen_hki(${keysDokumen.join(
         ", "
       )}) VALUES (${placeholdersDokumen.join(", ")}) returning *`,
       valuesDokumen
@@ -127,7 +112,7 @@ exports.addDataPublikasi = asyncHandler(async (req, res) => {
 
     // ==============END DOKUMEN PENELITIAN===================
 
-    if (saveDataPublikasi.rows) {
+    if (saveDataHki.rows) {
       res.status(200).json({
         message: "Successfull created data.",
       });
@@ -141,61 +126,93 @@ exports.addDataPublikasi = asyncHandler(async (req, res) => {
   }
 });
 
-exports.getDataPublikasi = asyncHandler(async (req, res) => {
+exports.getDataHki = asyncHandler(async (req, res) => {
   const userLoginId = req.user.user_id;
 
-  const dataPublikasi = await DB.query(
-    "SELECT * FROM tb_publikasi_karya WHERE user_id = $1",
-    [userLoginId]
-  );
+  const dataHki = await DB.query("SELECT * FROM tb_hki WHERE user_id = $1", [
+    userLoginId,
+  ]);
 
-  if (!dataPublikasi.rows.length) {
+  if (!dataHki.rows.length) {
     res.status(404);
     throw new Error("Data not found.");
   }
 
   res.status(201).json({
-    data: dataPublikasi.rows,
+    data: dataHki.rows,
   });
 });
 
-exports.detailDataPublikasi = asyncHandler(async (req, res) => {
-  const { publikasiId } = req.params;
+exports.detailDataHki = asyncHandler(async (req, res) => {
+  const { hkiId } = req.params;
 
-  const findDataPublikasi = await DB.query(
-    "SELECT * FROM tb_publikasi_karya WHERE publikasi_id = $1",
-    [publikasiId]
-  );
+  const findDataHki = await DB.query("SELECT * FROM tb_hki WHERE hki_id = $1", [
+    hkiId,
+  ]);
 
-  const penulis = await DB.query(
-    "SELECT penulis_publikasi.*, tb_users.user_id, tb_users.role, tb_data_pribadi.nama_lengkap FROM penulis_publikasi JOIN tb_users ON tb_users.user_id = penulis_publikasi.user_id JOIN tb_data_pribadi ON tb_data_pribadi.user_id = tb_users.user_id WHERE penulis_publikasi.publikasi_id = $1",
-    [publikasiId]
-  );
+  if (findDataHki.rows.length) {
+    const penulis = await DB.query(
+      "SELECT penulis_hki.*, tb_users.user_id, tb_users.role, tb_data_pribadi.nama_lengkap FROM penulis_hki JOIN tb_users ON tb_users.user_id = penulis_hki.user_id JOIN tb_data_pribadi ON tb_data_pribadi.user_id = tb_users.user_id WHERE penulis_hki.hki_id = $1",
+      [hkiId]
+    );
 
-  const findDataDokumen = await DB.query(
-    "SELECT * FROM dokumen_publikasi WHERE publikasi_id = $1",
-    [publikasiId]
-  );
+    const findDataDokumen = await DB.query(
+      "SELECT * FROM dokumen_hki WHERE hki_id = $1",
+      [hkiId]
+    );
 
-  res.status(201).json({
-    dataPublikasi: findDataPublikasi.rows,
-    dataPenulis: penulis.rows,
-    dataDokumen: findDataDokumen.rows,
-  });
+    res.status(201).json({
+      dataHki: findDataHki.rows,
+      dataPenulis: penulis.rows,
+      dataDokumen: findDataDokumen.rows,
+    });
+  } else {
+    res.status(404).json({
+      message: "Data not found",
+    });
+  }
 });
 
-exports.editDataPublikasi = asyncHandler(async (req, res) => {
-  const { publikasiId } = req.params;
+exports.deleteHki = asyncHandler(async (req, res) => {
+  const { hkiId } = req.params;
+
+  const findData = await DB.query("SELECT * FROM tb_hki WHERE hki_id = $1", [
+    hkiId,
+  ]);
+
+  if (!findData.rows.length) {
+    res.status(400);
+    throw new Error("Data not found.");
+  }
+
+  const findDokumen = await DB.query(
+    "SELECT * FROM dokumen_hki WHERE hki_id = $1",
+    [hkiId]
+  );
+
+  const dataDokumen = findDokumen.rows;
+  dataDokumen.forEach(async (dok) => {
+    await fs.remove(path.join(`public/dokumen-hki/${dok.file}`));
+  });
+
+  await DB.query("DELETE FROM penulis_hki WHERE hki_id = $1", [hkiId]);
+  await DB.query("DELETE FROM dokumen_hki WHERE hki_id = $1", [hkiId]);
+  await DB.query("DELETE FROM tb_hki WHERE hki_id = $1", [hkiId]);
+
+  res.status(200).json({ message: "Data deleted successfully." });
+});
+
+exports.editDataHki = asyncHandler(async (req, res) => {
+  const { hkiId } = req.params;
   const data = req.body;
   const file = req.file;
 
-  const findDataPublikasi = await DB.query(
-    "SELECT * FROM tb_publikasi_karya WHERE publikasi_id = $1",
-    [publikasiId]
-  );
+  const findDataHki = await DB.query("SELECT * FROM tb_hki WHERE hki_id = $1", [
+    hkiId,
+  ]);
 
-  if (findDataPublikasi.rows.length) {
-    // PENELITIAN
+  if (findDataHki.rows.length) {
+    // HKI
     function filterData(data) {
       const result = {};
 
@@ -208,20 +225,15 @@ exports.editDataPublikasi = asyncHandler(async (req, res) => {
       return result;
     }
 
-    const dataPublikasi = {
-      judul_artikel: data.judul_artikel,
-      jenis: data.jenis,
-      kategori_capain: data.kategori_capain,
-      nama_jurnal: data.nama_jurnal,
-      tautan_jurnal: data.tautan_jurnal,
-      tgl_terbit: data.tgl_terbit,
-      penerbit: data.penerbit,
-      tautan_eksternal: data.tautan_eksternal,
-      keterangan: data.keterangan_publikasi,
+    const dataHki = {
+      jenis_hki: data.jenis_hki,
+      judul_hki: data.judul_hki,
+      tgl_terbit_hki: data.tgl_terbit_hki,
+      keterangan: data.keterangan_hki,
       status: data.status,
     };
 
-    const filteredObject = filterData(dataPublikasi);
+    const filteredObject = filterData(dataHki);
 
     const updated_at = unixTimestamp;
     const convert = convertDate(updated_at);
@@ -232,16 +244,14 @@ exports.editDataPublikasi = asyncHandler(async (req, res) => {
       .join(", ");
 
     await DB.query(
-      `UPDATE tb_publikasi_karya SET ${setQuery} WHERE publikasi_id = '${findDataPublikasi.rows[0].publikasi_id}' `,
+      `UPDATE tb_hki SET ${setQuery} WHERE hki_id = '${findDataHki.rows[0].hki_id}' `,
       entries.map(([_, value]) => value)
     );
-    // END PENELITIAN
+    // END HKI
 
     // PENULIS PUBLIKASI
     if (data.penulis) {
-      await DB.query("DELETE FROM penulis_publikasi WHERE publikasi_id = $1", [
-        publikasiId,
-      ]);
+      await DB.query("DELETE FROM penulis_hki WHERE hki_id = $1", [hkiId]);
 
       JSON.parse(data.penulis).forEach(async (penulis) => {
         const dataPenulis = {
@@ -252,14 +262,14 @@ exports.editDataPublikasi = asyncHandler(async (req, res) => {
           correspond: penulis.correspond,
         };
 
-        const keysDataPenulis = ["publikasi_id", ...Object.keys(dataPenulis)];
-        const valuesDataPenulis = [publikasiId, ...Object.values(dataPenulis)];
+        const keysDataPenulis = ["hki_id", ...Object.keys(dataPenulis)];
+        const valuesDataPenulis = [hkiId, ...Object.values(dataPenulis)];
         const placeholdersDataPenulis = keysDataPenulis.map(
           (key, index) => `$${index + 1}`
         );
 
         await DB.query(
-          `INSERT INTO penulis_publikasi(${keysDataPenulis.join(
+          `INSERT INTO penulis_hki(${keysDataPenulis.join(
             ", "
           )}) VALUES (${placeholdersDataPenulis.join(", ")}) returning *`,
           valuesDataPenulis
@@ -298,13 +308,13 @@ exports.editDataPublikasi = asyncHandler(async (req, res) => {
       const convert = convertDate(created_at);
 
       const keys = [
-        "publikasi_id",
+        "hki_id",
         ...Object.keys(filteredObject),
         "file",
         "created_at",
       ];
       const values = [
-        publikasiId,
+        hkiId,
         ...Object.values(filteredObject),
         file.filename,
         convert,
@@ -313,7 +323,7 @@ exports.editDataPublikasi = asyncHandler(async (req, res) => {
 
       // save data
       await DB.query(
-        `INSERT INTO dokumen_publikasi(${keys.join(
+        `INSERT INTO dokumen_hki(${keys.join(
           ", "
         )}) VALUES (${placeholders.join(", ")}) returning *`,
         values
@@ -331,45 +341,10 @@ exports.editDataPublikasi = asyncHandler(async (req, res) => {
     });
   }
 });
+// ====================  HKI ==========================
 
-exports.deleteDataPublikasi = asyncHandler(async (req, res) => {
-  const { publikasiId } = req.params;
-
-  const findData = await DB.query(
-    "SELECT * FROM tb_publikasi_karya WHERE publikasi_id = $1",
-    [publikasiId]
-  );
-
-  if (!findData.rows.length) {
-    res.status(400);
-    throw new Error("Data not found.");
-  }
-
-  const findDokumen = await DB.query(
-    "SELECT * FROM dokumen_publikasi WHERE publikasi_id = $1",
-    [publikasiId]
-  );
-
-  const dataDokumen = findDokumen.rows;
-  dataDokumen.forEach(async (dok) => {
-    await fs.remove(path.join(`public/dokumen-publikasi-karya/${dok.file}`));
-  });
-
-  await DB.query("DELETE FROM penulis_publikasi WHERE publikasi_id = $1", [
-    publikasiId,
-  ]);
-  await DB.query("DELETE FROM dokumen_publikasi WHERE publikasi_id = $1", [
-    publikasiId,
-  ]);
-  await DB.query("DELETE FROM tb_publikasi_karya WHERE publikasi_id = $1", [
-    publikasiId,
-  ]);
-
-  res.status(200).json({ message: "Data deleted successfully." });
-});
-
-// ====================  END PUBLIKASI KARYA ==========================
-exports.addDokumenPublikasi = asyncHandler(async (req, res) => {
+// ==================== DOCUMENT HKI ======================
+exports.addDokumenHki = asyncHandler(async (req, res) => {
   const data = req.body;
   const file = req.file;
 
@@ -378,12 +353,11 @@ exports.addDokumenPublikasi = asyncHandler(async (req, res) => {
     throw new Error("Please fill in one file.");
   }
 
-  const findDataPublikasi = await DB.query(
-    "SELECT * FROM tb_publikasi_karya WHERE publikasi_id = $1",
-    [data.publikasi_id]
-  );
+  const findDataHki = await DB.query("SELECT * FROM tb_hki WHERE hki_id = $1", [
+    data.hki_id,
+  ]);
 
-  if (!findDataPublikasi.rows.length) {
+  if (!findDataHki.rows.length) {
     fs.unlink(file.path, (err) => {
       if (err) {
         console.log(err);
@@ -391,7 +365,7 @@ exports.addDokumenPublikasi = asyncHandler(async (req, res) => {
       return;
     });
     res.status(404);
-    throw new Error("Data Publikasi not found.");
+    throw new Error("Data HKI not found.");
   }
 
   if (!data.nama_dok || !data.keterangan) {
@@ -414,9 +388,9 @@ exports.addDokumenPublikasi = asyncHandler(async (req, res) => {
 
   // save data
   const saveData = await DB.query(
-    `INSERT INTO dokumen_publikasi(${keys.join(
+    `INSERT INTO dokumen_hki(${keys.join(", ")}) VALUES (${placeholders.join(
       ", "
-    )}) VALUES (${placeholders.join(", ")}) returning *`,
+    )}) returning *`,
     values
   );
 
@@ -431,11 +405,11 @@ exports.addDokumenPublikasi = asyncHandler(async (req, res) => {
   }
 });
 
-exports.detailDokumenPublikasi = asyncHandler(async (req, res) => {
+exports.detailDokumenHki = asyncHandler(async (req, res) => {
   const { dokumenId } = req.params;
 
   const findDataDokumen = await DB.query(
-    "SELECT * FROM dokumen_publikasi WHERE dokumen_id = $1",
+    "SELECT * FROM dokumen_hki WHERE dokumen_id = $1",
     [dokumenId]
   );
 
@@ -449,11 +423,11 @@ exports.detailDokumenPublikasi = asyncHandler(async (req, res) => {
   });
 });
 
-exports.deleteDokumenPublikasi = asyncHandler(async (req, res) => {
+exports.deleteDokumenHki = asyncHandler(async (req, res) => {
   const { dokumenId } = req.params;
 
   const findData = await DB.query(
-    "SELECT * FROM dokumen_publikasi WHERE dokumen_id = $1",
+    "SELECT * FROM dokumen_hki WHERE dokumen_id = $1",
     [dokumenId]
   );
 
@@ -462,23 +436,21 @@ exports.deleteDokumenPublikasi = asyncHandler(async (req, res) => {
     throw new Error("Data not found.");
   }
 
-  await fs.remove(
-    path.join(`public/dokumen-publikasi-karya/${findData.rows[0].file}`)
-  );
-  await DB.query("DELETE FROM dokumen_publikasi WHERE dokumen_id = $1", [
+  await fs.remove(path.join(`public/dokumen-hki/${findData.rows[0].file}`));
+  await DB.query("DELETE FROM dokumen_hki WHERE dokumen_id = $1", [
     findData.rows[0].dokumen_id,
   ]);
 
   res.status(200).json({ message: "Data deleted successfully." });
 });
 
-exports.editDokumenPublikasi = asyncHandler(async (req, res) => {
+exports.editDokumenHki = asyncHandler(async (req, res) => {
   const { dokumenId } = req.params;
   const file = req.file;
   const data = req.body;
 
   const findData = await DB.query(
-    "SELECT * FROM dokumen_publikasi WHERE dokumen_id = $1",
+    "SELECT * FROM dokumen_hki WHERE dokumen_id = $1",
     [dokumenId]
   );
 
@@ -493,7 +465,7 @@ exports.editDokumenPublikasi = asyncHandler(async (req, res) => {
         .join(", ");
 
       const saveData = await DB.query(
-        `UPDATE dokumen_publikasi SET ${setQuery} WHERE dokumen_id = '${findData.rows[0].dokumen_id}' `,
+        `UPDATE dokumen_hki SET ${setQuery} WHERE dokumen_id = '${findData.rows[0].dokumen_id}' `,
         entries.map(([_, value]) => value)
       );
 
@@ -502,9 +474,7 @@ exports.editDokumenPublikasi = asyncHandler(async (req, res) => {
         data: saveData.rows[0],
       });
     } else {
-      await fs.remove(
-        path.join(`public/dokumen-publikasi-karya/${findData.rows[0].file}`)
-      );
+      await fs.remove(path.join(`public/dokumen-hki/${findData.rows[0].file}`));
       const updated_at = unixTimestamp;
       const convert = convertDate(updated_at);
 
@@ -518,7 +488,7 @@ exports.editDokumenPublikasi = asyncHandler(async (req, res) => {
         .join(", ");
 
       const saveData = await DB.query(
-        `UPDATE dokumen_publikasi SET ${setQuery} WHERE dokumen_id = '${findData.rows[0].dokumen_id}' `,
+        `UPDATE dokumen_hki SET ${setQuery} WHERE dokumen_id = '${findData.rows[0].dokumen_id}' `,
         entries.map(([_, value]) => value)
       );
 
@@ -538,3 +508,4 @@ exports.editDokumenPublikasi = asyncHandler(async (req, res) => {
     throw new Error("Data not found.");
   }
 });
+// ==================== END DOCUMENT HKI ==================

@@ -388,44 +388,79 @@ CREATE TABLE penulis_publikasi (
 	correspond BOOLEAN
 );
 
--- YANG DIATAS ALL DONE
-
-tb_publikasiKarya(
-	judulArtikel
-	jenisPublikasi
-	kategoriCapaian
-	namaJurnal
-	tautanJurnal
-	tglTerbitJurnal
-	penerbitJurnal
-	tautanEksternal
-	keterangan
-)
-
-
-
-CREATE TABLE tb_HKI (
-	jenisHki varchar (200),
-	judulHki varchar (255) NOT NULL,
-	tanggalterbitHki DATE,
+CREATE TABLE tb_hki (
+	hki_id uuid DEFAULT uuid_generate_v4() PRIMARY KEY NOT NULL,
+	user_id uuid NOT NULL, CONSTRAINT fk_user_hki FOREIGN KEY (user_id) REFERENCES tb_users(user_id),
+	jenis_hki varchar (255),
+	judul_hki varchar (255) NOT NULL,
+	tgl_terbit_hki DATE,
 	keterangan TEXT,
-	created_at TIMESTAMPTZ NOT NULL DEFAULT current_date,
+	status INT DEFAULT 0,
+	created_at TIMESTAMP,
 	updated_at TIMESTAMP,
 	deleted_at TIMESTAMP
-)
+);
+
+CREATE TABLE dokumen_hki(
+	dokumen_id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY NOT NULL,
+	hki_id uuid NOT NULL, CONSTRAINT fk_dokumen_hki FOREIGN KEY (hki_id) REFERENCES tb_hki(hki_id),
+	nama_dok varchar(180) NOT NULL,
+	keterangan TEXT,
+	tautan_dok varchar(255),
+	file varchar(255) NOT NULL,
+	created_at TIMESTAMP,
+	updated_at TIMESTAMP,
+	deleted_at TIMESTAMP
+);
+
+CREATE TABLE penulis_hki (
+	penulis_id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY NOT NULL,
+	hki_id uuid NOT NULL, CONSTRAINT fk_penulis_hki FOREIGN KEY (hki_id) REFERENCES tb_hki(hki_id),
+	user_id uuid NOT NULL, CONSTRAINT fk_user_penulis_hki FOREIGN KEY (user_id) REFERENCES tb_users(user_id),
+	urutan INT,
+	afiliasi TEXT,
+	peran varchar(25),
+	correspond BOOLEAN
+);
 
 CREATE TABLE tb_pengabdian (
-	judulKegiatan varchar(200) NOT NULL,
-	afisialisasipengabdian varchar(100) NOT NULL,
-	kelompokBidang varchar(50),
-	lokasiKegiatan varchar(200),
-	lamaKegiatan varchar(200) NOT NULL,
-	noSkPenugasan varchar(200) NOT NULL,
-	tglSkPenugasan DATE NOT NULL,
-	created_at TIMESTAMPTZ NOT NULL DEFAULT current_date,
+	pengabdian_id uuid DEFAULT uuid_generate_v4() PRIMARY KEY NOT NULL,
+	user_id uuid NOT NULL, CONSTRAINT fk_user_pengabdian FOREIGN KEY (user_id) REFERENCES tb_users(user_id),
+	judul_kegiatan varchar(255) NOT NULL,
+	kelompok_bidang varchar(255),
+	lokasi_kegiatan varchar(200) NOT NULL,
+	lama_kegiatan varchar(200) NOT NULL,
+	no_sk_penugasan varchar(200),
+	tgl_sk_penugasan DATE,
+	status INT DEFAULT 0,
+	created_at TIMESTAMP,
 	updated_at TIMESTAMP,
 	deleted_at TIMESTAMP
 )
+
+CREATE TABLE angota_pengabdian(
+	anggota_id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY NOT NULL,
+	pengabdian_id uuid NOT NULL, CONSTRAINT fk_tb_anggota_pengabdian FOREIGN KEY (pengabdian_id) REFERENCES tb_pengabdian (pengabdian_id),
+	user_id uuid NOT NULL, CONSTRAINT fk_tb_anggota_user FOREIGN KEY (user_id) REFERENCES tb_users(user_id),
+	peran varchar(180) NOT NULL,
+	status BOOLEAN DEFAULT false
+);
+
+CREATE TABLE dokumen_pengabdian(
+	dokumen_id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY NOT NULL,
+	pengabdian_id uuid NOT NULL, CONSTRAINT fk_tb_pengabdian FOREIGN KEY (pengabdian_id) REFERENCES tb_pengabdian(pengabdian_id),
+	nama_dok varchar(180) NOT NULL,
+	keterangan TEXT,
+	tautan_dok varchar(255),
+	file varchar(255) NOT NULL,
+	created_at TIMESTAMP,
+	updated_at TIMESTAMP,
+	deleted_at TIMESTAMP
+);
+-- ========================================================================================================
+-- ========================================================================================================
+
+
 
 CREATE TABLE tb_pengajaranDosen(
 	namaMatkul varchar(100) NOT NULL,

@@ -1,5 +1,5 @@
 const express = require("express");
-const { protected } = require("../../../middleware/authMiddleware");
+const { protected } = require("../../middleware/authMiddleware");
 const {
   addDataPembicara,
   getDataPembicara,
@@ -10,10 +10,10 @@ const {
   detailDokumenPembicara,
   deleteDokumenPembicara,
   editDokumenPembicara,
-} = require("../../../controllers/pelaks-pengabdian/pembicaraController");
+} = require("../../controllers/pelaks-pengabdian/pembicaraController");
 const {
   dokumenPembicaraUpload,
-} = require("../../../middleware/pelaks-pengabdian/pembicaraUpload");
+} = require("../../middleware/pelaks-pengabdian/pembicaraUpload");
 
 const router = express.Router();
 

@@ -251,6 +251,10 @@ exports.editDataPembicara = asyncHandler(async (req, res) => {
 
     // Add Dokumen
     if (data.nama_dok || data.keterangan || data.tautan_dok || file) {
+      if (!file) {
+        res.status(400);
+        throw new Error("Please fill in one file.");
+      }
       function filterData(data) {
         const result = {};
 
@@ -415,6 +419,8 @@ exports.deleteDokumenPembicara = asyncHandler(async (req, res) => {
 
 exports.editDokumenPembicara = asyncHandler(async (req, res) => {
   const { dokumenId } = req.params;
+  const file = req.file;
+  const data = req.body;
 
   const findData = await DB.query(
     "SELECT * FROM dokumen_pembicara WHERE dokumen_id = $1",
@@ -422,9 +428,6 @@ exports.editDokumenPembicara = asyncHandler(async (req, res) => {
   );
 
   if (findData.rows.length) {
-    const file = req.file;
-    const data = req.body;
-
     if (!file) {
       const updated_at = unixTimestamp;
       const convert = convertDate(updated_at);
@@ -470,6 +473,13 @@ exports.editDokumenPembicara = asyncHandler(async (req, res) => {
       });
     }
   } else {
+    fs.unlink(file.path, (err) => {
+      if (err) {
+        console.log(err);
+      }
+      return;
+    });
+
     res.status(404);
     throw new Error("Data not found.");
   }

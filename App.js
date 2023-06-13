@@ -12,7 +12,9 @@ const penunjangRoutes = require("./routes/penunjang/penunjangRoutes");
 const tgsTambahanDsn = require("./routes/pelaks-pendidikan/tugasTambahanDsnRoutes");
 const penelitianRoutes = require("./routes/pelaks-penelitian/penelitianRoutes");
 const publikasiKaryaRoutes = require("./routes/pelaks-penelitian/publikasiKaryaRoutes");
-const pembicaraRoutes = require("./routes/pelaks-pengabdian/pembicara/pembicaraRoutes");
+const hkiRoutes = require("./routes/pelaks-penelitian/hkiRoutes");
+const pengabdianRoutes = require("./routes/pelaks-pengabdian/pengabdianRoutes");
+const pembicaraRoutes = require("./routes/pelaks-pengabdian/pembicaraRoutes");
 const errorHandler = require("./helper/errorHandler");
 
 const app = express();
@@ -42,7 +44,9 @@ app.use("/kolabExt", kolabExtRoutes);
 app.use("/tgsTamabahanDsn", tgsTambahanDsn);
 app.use("/penelitian", penelitianRoutes);
 app.use("/penelitian/publikasi-karya", publikasiKaryaRoutes);
-app.use("/pengabdian/pembicara/", pembicaraRoutes);
+app.use("/penelitian/hki", hkiRoutes);
+app.use("/pengabdian", pengabdianRoutes);
+app.use("/pengabdian/pembicara", pembicaraRoutes);
 
 // Mobile Application API dibawah
 
