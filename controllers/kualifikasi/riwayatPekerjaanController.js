@@ -230,3 +230,32 @@ exports.deleteDataRiwayatPekerjaan = asyncHandler(async (req, res) => {
 
   res.status(200).json({ message: "Data deleted successfully." });
 });
+exports.editStatusRiwayatPekerjaan = asyncHandler(async (req, res) => {
+  const { rwytId } = req.params;
+  const data = req.body;
+
+  if (!data.status) {
+    res.status(400);
+    throw new Error("Pleas fill in all the required fields.");
+  }
+
+  const findData = await DB.query(
+    "SELECT * FROM tb_riwayat_pekerjaan WHERE rwyt_pekerjaan_id = $1",
+    [rwytId]
+  );
+
+  if (findData.rows.length) {
+    const updateStatus = await DB.query(
+      `UPDATE tb_riwayat_pekerjaan SET status = $1 WHERE rwyt_pekerjaan_id = $2`,
+      [data.status, rwytId]
+    );
+
+    res.status(201).json({
+      message: "Successfully update data.",
+      data: updateStatus.rows[0],
+    });
+  } else {
+    res.status(404);
+    throw new Error("Data not found.");
+  }
+});

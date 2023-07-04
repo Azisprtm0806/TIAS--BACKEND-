@@ -37,21 +37,6 @@ exports.addPendidikan = asyncHandler(async (req, res) => {
       throw new Error("Pleas fill in all the required fields.");
     }
 
-    const existsAsalPend = await DB.query(
-      `SELECT * FROM tb_pend_formal WHERE CAST(user_id AS TEXT) LIKE '%${userLoginId}%' AND asal LIKE '%${data.asal}%'`
-    );
-
-    if (existsAsalPend.rows.length) {
-      fs.unlink(file.file_pend[0].path, (err) => {
-        if (err) {
-          console.log(err);
-        }
-        return;
-      });
-      res.status(400);
-      throw new Error("Asal Sekolah/Universitas already exists.");
-    }
-
     const existsJenjangStudi = await DB.query(
       `SELECT * FROM tb_pend_formal WHERE CAST(user_id AS TEXT) LIKE '%${userLoginId}%' AND jenjang_studi LIKE '%${data.jenjang_studi}%'`
     );
@@ -81,21 +66,6 @@ exports.addPendidikan = asyncHandler(async (req, res) => {
       });
       res.status(400);
       throw new Error("Nomor Induk already exists.");
-    }
-
-    const existsJudultesis = await DB.query(
-      `SELECT * FROM tb_pend_formal WHERE CAST(user_id AS TEXT) LIKE '%${userLoginId}%' AND judul_tesis LIKE '%${data.judul_tesis}%'`
-    );
-
-    if (existsJudultesis.rows.length) {
-      fs.unlink(file.file_pend[0].path, (err) => {
-        if (err) {
-          console.log(err);
-        }
-        return;
-      });
-      res.status(400);
-      throw new Error("Judul Tesis already exists.");
     }
 
     const existsNomorIjazah = await DB.query(
@@ -214,26 +184,6 @@ exports.editDataPendidikan = asyncHandler(async (req, res) => {
     const file = req.files;
     const data = req.body;
 
-    const existsAsalPend = await DB.query(
-      `SELECT * FROM tb_pend_formal WHERE CAST(user_id AS TEXT) LIKE '%${userLoginId}%' AND asal LIKE '%${data.asal}%'`
-    );
-
-    if (existsAsalPend.rows.length) {
-      if (Object.keys(file).length === 0) {
-        res.status(400);
-        throw new Error("Asal Sekolah/Universitas already exists.");
-      } else {
-        fs.unlink(file.file_pend[0].path, (err) => {
-          if (err) {
-            console.log(err);
-          }
-          return;
-        });
-        res.status(400);
-        throw new Error("Asal Sekolah/Universitas already exists.");
-      }
-    }
-
     const existsJenjangStudi = await DB.query(
       `SELECT * FROM tb_pend_formal WHERE CAST(user_id AS TEXT) LIKE '%${userLoginId}%' AND jenjang_studi LIKE '%${data.jenjang_studi}%'`
     );
@@ -272,26 +222,6 @@ exports.editDataPendidikan = asyncHandler(async (req, res) => {
         });
         res.status(400);
         throw new Error("Nomor Induk already exists.");
-      }
-    }
-
-    const existsJudultesis = await DB.query(
-      `SELECT * FROM tb_pend_formal WHERE CAST(user_id AS TEXT) LIKE '%${userLoginId}%' AND judul_tesis LIKE '%${data.judul_tesis}%'`
-    );
-
-    if (existsJudultesis.rows.length) {
-      if (Object.keys(file).length === 0) {
-        res.status(400);
-        throw new Error("Judul Tesis already exists.");
-      } else {
-        fs.unlink(file.file_pend[0].path, (err) => {
-          if (err) {
-            console.log(err);
-          }
-          return;
-        });
-        res.status(400);
-        throw new Error("Judul Tesis already exists.");
       }
     }
 
@@ -406,4 +336,34 @@ exports.deleteDataPendidikan = asyncHandler(async (req, res) => {
   ]);
 
   res.status(200).json({ message: "Data deleted successfully." });
+});
+
+exports.editStatusPendidikan = asyncHandler(async (req, res) => {
+  const { pendId } = req.params;
+  const data = req.body;
+
+  if (!data.status) {
+    res.status(400);
+    throw new Error("Pleas fill in all the required fields.");
+  }
+
+  const findData = await DB.query(
+    "SELECT * FROM tb_pend_formal WHERE pend_id = $1",
+    [pendId]
+  );
+
+  if (findData.rows.length) {
+    const updateStatus = await DB.query(
+      `UPDATE tb_pend_formal SET status = $1 WHERE pend_id = $2`,
+      [data.status, pendId]
+    );
+
+    res.status(201).json({
+      message: "Successfully update data.",
+      data: updateStatus.rows[0],
+    });
+  } else {
+    res.status(404);
+    throw new Error("Data not found.");
+  }
 });

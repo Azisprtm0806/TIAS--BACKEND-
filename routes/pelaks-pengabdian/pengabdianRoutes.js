@@ -9,6 +9,10 @@ const {
   detailDataPengabdian,
   editDataPengabdian,
   deleteDataPengabdian,
+  addDokumenPengabdian,
+  detailDokumenPengabdian,
+  deleteDokumenPengabdian,
+  editDokumenPengabdian,
 } = require("../../controllers/pelaks-pengabdian/pengabdianController");
 
 const router = express.Router();
@@ -21,7 +25,8 @@ router.patch(
   "/editPengabdian/:pengabdianId",
   protected,
   pengabdianUpload,
-  editDataPengabdian
+  editDataPengabdian,
+  detailDokumenPengabdian
 );
 router.delete(
   "/deletePengabdian/:pengabdianId",
@@ -32,10 +37,15 @@ router.delete(
 // ============= END PENGABDIAN =====================
 
 // ============= DOKUMEN PENGABDIAN ==============
-// router.post("/addDokumen", protected, hkiUpload, addDokumenHki);
-// router.get("/detailDokumen/:dokumenId", protected, detailDokumenHki);
-// router.delete("/deleteDokumen/:dokumenId", protected, deleteDokumenHki);
-// router.patch("/editDokumen/:dokumenId", protected, hkiUpload, editDokumenHki);
+router.post("/addDokumen", protected, pengabdianUpload, addDokumenPengabdian);
+router.get("/detailDokumen/:dokumenId", protected, detailDokumenPengabdian);
+router.delete("/deleteDokumen/:dokumenId", protected, deleteDokumenPengabdian);
+router.patch(
+  "/editDokumen/:dokumenId",
+  protected,
+  pengabdianUpload,
+  editDokumenPengabdian
+);
 // ============= END DOKUMEN PENGABDIAN ==========
 
 module.exports = router;

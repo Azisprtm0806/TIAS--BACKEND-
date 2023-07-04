@@ -4,7 +4,7 @@ const path = require("path");
 // Set Up Storage for uploaded files
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, "public/dokumen-tgs-tambahan-dsn");
+    cb(null, "public/file-ipMhs");
   },
   filename: (req, file, cb) => {
     cb(null, Date.now() + "-" + file.originalname);
@@ -31,7 +31,7 @@ const fileUpload = multer({
 }).single("file");
 
 // Middleware function to use multer for file uploads
-const dokumenTgsTamabahanDsnUpload = (req, res, next) => {
+const ipMhsUpload = (req, res, next) => {
   fileUpload(req, res, (err) => {
     if (err) {
       console.log(err);
@@ -46,4 +46,4 @@ const dokumenTgsTamabahanDsnUpload = (req, res, next) => {
   });
 };
 
-module.exports = { dokumenTgsTamabahanDsnUpload };
+module.exports = { ipMhsUpload };

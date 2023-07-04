@@ -48,7 +48,7 @@ exports.addDataPenelitian = asyncHandler(async (req, res) => {
       lokasi_kegiatan: data.lokasi_kegiatan,
       tahun_usulan: data.tahun_usulan,
       tahun_kegiatan: data.tahun_kegiatan,
-      tahun_pelaksanaan: data.tahun_kegiatan,
+      tahun_pelaksanaan: data.tahun_pelaksanaan,
       lama_kegiatan: data.lama_kegiatan,
       no_sk_penugasan: data.no_sk_penugasan,
       tgl_sk_penugasan: data.tgl_sk_penugasan,

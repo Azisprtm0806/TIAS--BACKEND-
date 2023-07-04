@@ -37,22 +37,6 @@ exports.addPenghargaan = asyncHandler(async (req, res) => {
       throw new Error("Pleas fill in all the required fields.");
     }
 
-    const existsNamaPeng = await DB.query(
-      "SELECT * FROM tb_penghargaan WHERE nama_peng = $1",
-      [data.nama_peng]
-    );
-
-    if (existsNamaPeng.rows.length) {
-      fs.unlink(file.file_penghargaan[0].path, (err) => {
-        if (err) {
-          console.log(err);
-        }
-        return;
-      });
-      res.status(400);
-      throw new Error("Name of penghargaan already exists.");
-    }
-
     const created_at = unixTimestamp;
     const convert = convertDate(created_at);
 
@@ -137,27 +121,6 @@ exports.editPenghargaan = asyncHandler(async (req, res) => {
     const file = req.files;
     const data = req.body;
 
-    const existsNamePeng = await DB.query(
-      "SELECT * FROM tb_penghargaan WHERE nama_peng = $1",
-      [data.nama_peng]
-    );
-
-    if (existsNamePeng.rows.length) {
-      if (Object.keys(file).length === 0) {
-        res.status(400);
-        throw new Error("Name of penghargaan already exists.");
-      } else {
-        fs.unlink(file.file_penghargaan[0].path, (err) => {
-          if (err) {
-            console.log(err);
-          }
-          return;
-        });
-        res.status(400);
-        throw new Error("Name of penghargaan already exists.");
-      }
-    }
-
     if (Object.keys(file).length === 0) {
       const updated_at = unixTimestamp;
       const convert = convertDate(updated_at);
@@ -229,4 +192,34 @@ exports.deletePenghargaan = asyncHandler(async (req, res) => {
   ]);
 
   res.status(200).json({ message: "Data deleted successfully." });
+});
+
+exports.updateStatusPenghargaan = asyncHandler(async (req, res) => {
+  const { pengId } = req.params;
+  const data = req.body;
+
+  if (!data.status) {
+    res.status(400);
+    throw new Error("Pleas fill in all the required fields.");
+  }
+
+  const findData = await DB.query(
+    "SELECT * FROM tb_penghargaan WHERE penghargaan_id = $1",
+    [pengId]
+  );
+
+  if (findData.rows.length) {
+    const updateStatus = await DB.query(
+      `UPDATE tb_penghargaan SET status = $1 WHERE penghargaan_id = $2`,
+      [data.status, pengId]
+    );
+
+    res.status(201).json({
+      message: "Successfully update data.",
+      data: updateStatus.rows[0],
+    });
+  } else {
+    res.status(404);
+    throw new Error("Data not found.");
+  }
 });

@@ -9,7 +9,8 @@ const kualifikasiRoutes = require("./routes/kualifikasi/kualifikasiRoutes");
 const kompetensiRoutes = require("./routes/kompetensi/kompetensiRoutes");
 const kolabExtRoutes = require("./routes/kolaborator-external/kolabExternalRoutes");
 const penunjangRoutes = require("./routes/penunjang/penunjangRoutes");
-const tgsTambahanDsn = require("./routes/pelaks-pendidikan/tugasTambahanDsnRoutes");
+const ipMhsRoutes = require("./routes/pelaks-pendidikan/ipMhsRoutes");
+const bimbinganRoutes = require("./routes/pelaks-pendidikan/bimbinganRoutes");
 const penelitianRoutes = require("./routes/pelaks-penelitian/penelitianRoutes");
 const publikasiKaryaRoutes = require("./routes/pelaks-penelitian/publikasiKaryaRoutes");
 const hkiRoutes = require("./routes/pelaks-penelitian/hkiRoutes");
@@ -24,7 +25,7 @@ app.use(cookieParser());
 app.use(bodyParser.json());
 app.use(
   cors({
-    origin: "http://localhost:3000/",
+    origin: ["http://localhost:3000", "https://authentication-role.vercel.app"],
     credentials: true,
   })
 );
@@ -41,7 +42,8 @@ app.use("/kualifikasi", kualifikasiRoutes);
 app.use("/kompetensi", kompetensiRoutes);
 app.use("/penunjang", penunjangRoutes);
 app.use("/kolabExt", kolabExtRoutes);
-app.use("/tgsTamabahanDsn", tgsTambahanDsn);
+app.use("/ipMhs", ipMhsRoutes);
+app.use("/pendidikan/bimbingan", bimbinganRoutes);
 app.use("/penelitian", penelitianRoutes);
 app.use("/penelitian/publikasi-karya", publikasiKaryaRoutes);
 app.use("/penelitian/hki", hkiRoutes);

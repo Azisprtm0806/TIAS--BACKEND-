@@ -211,7 +211,7 @@ exports.loginUser = asyncHandler(async (req, res) => {
 
   if (!user.rows.length) {
     res.status(404);
-    throw new Error("User not found, please signup.");
+    throw new Error("Invalid Email Or Password.");
   }
 
   const passwordIsCorrect = await bcrypt.compare(
@@ -221,7 +221,7 @@ exports.loginUser = asyncHandler(async (req, res) => {
 
   if (!passwordIsCorrect) {
     res.status(400);
-    throw new Error("Invalid password.");
+    throw new Error("Invalid Email Or Password.");
   }
 
   if (!user.rows[0].isverified) {

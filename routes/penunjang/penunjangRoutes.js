@@ -1,5 +1,5 @@
 const express = require("express");
-const { protected } = require("../../middleware/authMiddleware");
+const { protected, adminOnly } = require("../../middleware/authMiddleware");
 const { penunjangUpload } = require("../../middleware/penunjangUpload");
 const {
   addDataProfesi,
@@ -7,6 +7,7 @@ const {
   detailDataProfesi,
   editDataProfesi,
   deleteDataProfesi,
+  updateStatusProfesi,
 } = require("../../controllers/penunjang/anggotaProfesiController");
 const {
   addPenghargaan,
@@ -14,11 +15,12 @@ const {
   detailPenghargaan,
   editPenghargaan,
   deletePenghargaan,
+  updateStatusPenghargaan,
 } = require("../../controllers/penunjang/penghargaanController");
 
 const router = express.Router();
 
-// ============= SERTIFIKAT ======================
+// ============= PROFESI ======================
 router.post("/addProfesi", protected, penunjangUpload, addDataProfesi);
 router.get("/getProfesi", protected, getAllDataProfesi);
 router.get("/detailProfesi/:profId", protected, detailDataProfesi);
@@ -29,8 +31,13 @@ router.patch(
   editDataProfesi
 );
 router.delete("/deleteProfesi/:profId", protected, deleteDataProfesi);
-
-// ============= END SERTIFIKAT ==================
+router.patch(
+  "/updateStatusProf/:profId",
+  protected,
+  adminOnly,
+  updateStatusProfesi
+);
+// ============= END PROFESI ==================
 
 // ================== Penghargaan ======================
 router.post("/addPenghargaan", protected, penunjangUpload, addPenghargaan);
@@ -43,6 +50,12 @@ router.patch(
   editPenghargaan
 );
 router.delete("/deletePenghargaan/:pengId", protected, deletePenghargaan);
+router.patch(
+  "/updateStatusPenghargaan/:pengId",
+  protected,
+  adminOnly,
+  updateStatusPenghargaan
+);
 // ================== END TES ==================
 
 module.exports = router;

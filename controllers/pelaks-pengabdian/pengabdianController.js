@@ -363,3 +363,174 @@ exports.deleteDataPengabdian = asyncHandler(async (req, res) => {
   res.status(200).json({ message: "Data deleted successfully." });
 });
 // ====================  END PENGABDIAN ==========================
+
+// ===================== DOKUMEN PENGABDIAN =====================
+exports.addDokumenPengabdian = asyncHandler(async (req, res) => {
+  const data = req.body;
+  const file = req.file;
+
+  if (!file) {
+    res.status(400);
+    throw new Error("Please fill in one file.");
+  }
+
+  const findDataPengabdian = await DB.query(
+    "SELECT * FROM tb_pengabdian WHERE pengabdian_id = $1",
+    [data.pengabdian_id]
+  );
+  if (!findDataPengabdian.rows.length) {
+    fs.unlink(file.path, (err) => {
+      if (err) {
+        console.log(err);
+      }
+      return;
+    });
+    res.status(404);
+    throw new Error("Data Pengabdian not found.");
+  }
+
+  if (!data.nama_dok || !data.keterangan) {
+    fs.unlink(file.path, (err) => {
+      if (err) {
+        console.log(err);
+      }
+      return;
+    });
+    res.status(400);
+    throw new Error("Pleas fill in all the required fields.");
+  }
+
+  const created_at = unixTimestamp;
+  const convert = convertDate(created_at);
+
+  const keys = [...Object.keys(data), "file", "created_at"];
+  const values = [...Object.values(data), file.filename, convert];
+  const placeholders = keys.map((key, index) => `$${index + 1}`);
+
+  // save data
+  const saveData = await DB.query(
+    `INSERT INTO dokumen_pengabdian(${keys.join(
+      ", "
+    )}) VALUES (${placeholders.join(", ")}) returning *`,
+    values
+  );
+
+  if (saveData.rows) {
+    res.status(200).json({
+      message: "Successfull created data.",
+      data: saveData.rows[0],
+    });
+  } else {
+    res.status(400);
+    throw new Error("Invalid data.");
+  }
+});
+
+exports.detailDokumenPengabdian = asyncHandler(async (req, res) => {
+  const { dokumenId } = req.params;
+
+  const findDataDokumen = await DB.query(
+    "SELECT * FROM dokumen_pengabdian WHERE dokumen_id = $1",
+    [dokumenId]
+  );
+
+  if (!findDataDokumen.rows.length) {
+    res.status(404);
+    throw new Error("Data not found.");
+  }
+
+  res.status(201).json({
+    data: findDataDokumen.rows[0],
+  });
+});
+
+exports.deleteDokumenPengabdian = asyncHandler(async (req, res) => {
+  const { dokumenId } = req.params;
+
+  const findData = await DB.query(
+    "SELECT * FROM dokumen_pengabdian WHERE dokumen_id = $1",
+    [dokumenId]
+  );
+
+  if (!findData.rows.length) {
+    res.status(400);
+    throw new Error("Data not found.");
+  }
+
+  await fs.remove(
+    path.join(`public/dokumen-pengabdian/${findData.rows[0].file}`)
+  );
+  await DB.query("DELETE FROM dokumen_pengabdian WHERE dokumen_id = $1", [
+    findData.rows[0].dokumen_id,
+  ]);
+
+  res.status(200).json({ message: "Data deleted successfully." });
+});
+
+exports.editDokumenPengabdian = asyncHandler(async (req, res) => {
+  const { dokumenId } = req.params;
+  const file = req.file;
+  const data = req.body;
+
+  const findData = await DB.query(
+    "SELECT * FROM dokumen_pengabdian WHERE dokumen_id = $1",
+    [dokumenId]
+  );
+
+  if (findData.rows.length) {
+    if (!file) {
+      const updated_at = unixTimestamp;
+      const convert = convertDate(updated_at);
+
+      const entries = Object.entries({ ...data, updated_at: convert });
+      const setQuery = entries
+        .map(([key, _], index) => `${key} = $${index + 1}`)
+        .join(", ");
+
+      const saveData = await DB.query(
+        `UPDATE dokumen_pengabdian SET ${setQuery} WHERE dokumen_id = '${findData.rows[0].dokumen_id}' `,
+        entries.map(([_, value]) => value)
+      );
+
+      res.status(201).json({
+        message: "Successfully update data.",
+        data: saveData.rows[0],
+      });
+    } else {
+      await fs.remove(
+        path.join(`public/dokumen-pengabdian/${findData.rows[0].file}`)
+      );
+      const updated_at = unixTimestamp;
+      const convert = convertDate(updated_at);
+
+      const entries = Object.entries({
+        ...data,
+        file: file.filename,
+        updated_at: convert,
+      });
+      const setQuery = entries
+        .map(([key, _], index) => `${key} = $${index + 1}`)
+        .join(", ");
+
+      const saveData = await DB.query(
+        `UPDATE dokumen_pengabdian SET ${setQuery} WHERE pengabdian_id = '${findData.rows[0].pengabdian_id}' `,
+        entries.map(([_, value]) => value)
+      );
+
+      res.status(201).json({
+        message: "Successfully update data.",
+        data: saveData.rows[0],
+      });
+    }
+  } else {
+    fs.unlink(file.path, (err) => {
+      if (err) {
+        console.log(err);
+      }
+      return;
+    });
+    res.status(404);
+    throw new Error("Data not found.");
+  }
+});
+// ===================== END DOKUMEN PENGABDIAN ===================

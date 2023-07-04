@@ -36,21 +36,6 @@ exports.createDataTes = asyncHandler(async (req, res) => {
       throw new Error("Pleas fill in all the required fields.");
     }
 
-    const existsNameTes = await DB.query(
-      `SELECT * FROM tb_tes WHERE CAST(user_id AS TEXT) LIKE '%${user.rows[0].user_id}%' AND nama_tes LIKE '%${data.nama_tes}%'`
-    );
-
-    if (existsNameTes.rows.length) {
-      fs.unlink(file.file_tes[0].path, (err) => {
-        if (err) {
-          console.log(err);
-        }
-        return;
-      });
-      res.status(400);
-      throw new Error("Name of TES already exists.");
-    }
-
     const created_at = unixTimestamp;
     const convert = convertDate(created_at);
 
@@ -132,26 +117,6 @@ exports.editDataTes = asyncHandler(async (req, res) => {
     const data = req.body;
     const file = req.files;
 
-    const existsNameTes = await DB.query(
-      `SELECT * FROM tb_tes WHERE CAST(user_id AS TEXT) LIKE '%${userLoginId}%' AND nama_tes LIKE '%${data.nama_tes}%'`
-    );
-
-    if (existsNameTes.rows.length) {
-      if (Object.keys(file).length === 0) {
-        res.status(400);
-        throw new Error("Name of TES already exists.");
-      } else {
-        fs.unlink(file.file_tes[0].path, (err) => {
-          if (err) {
-            console.log(err);
-          }
-          return;
-        });
-        res.status(400);
-        throw new Error("Name of TES already exists.");
-      }
-    }
-
     if (Object.keys(file).length === 0) {
       const updated_at = unixTimestamp;
       const convert = convertDate(updated_at);
@@ -218,4 +183,33 @@ exports.deleteTes = asyncHandler(async (req, res) => {
   ]);
 
   res.status(200).json({ message: "Data deleted successfully." });
+});
+
+exports.editStatusTes = asyncHandler(async (req, res) => {
+  const { tesId } = req.params;
+  const data = req.body;
+
+  if (!data.status) {
+    res.status(400);
+    throw new Error("Pleas fill in all the required fields.");
+  }
+
+  const findData = await DB.query("SELECT * FROM tb_tes WHERE tes_id = $1", [
+    tesId,
+  ]);
+
+  if (findData.rows.length) {
+    const updateStatus = await DB.query(
+      `UPDATE tb_tes SET status = $1 WHERE tes_id = $2`,
+      [data.status, tesId]
+    );
+
+    res.status(201).json({
+      message: "Successfully update data.",
+      data: updateStatus.rows[0],
+    });
+  } else {
+    res.status(404);
+    throw new Error("Data not found.");
+  }
 });

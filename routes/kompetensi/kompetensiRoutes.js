@@ -1,5 +1,5 @@
 const express = require("express");
-const { protected } = require("../../middleware/authMiddleware");
+const { protected, adminOnly } = require("../../middleware/authMiddleware");
 const { kompetensiUpload } = require("../../middleware/kompetensiUpload");
 const {
   createDataSerti,
@@ -7,6 +7,7 @@ const {
   detailDataSerti,
   editDataSerti,
   deleteDataSerti,
+  editStatusSerti,
 } = require("../../controllers/kompetensi/sertifikasiController");
 const {
   createDataTes,
@@ -14,6 +15,7 @@ const {
   detailDataTes,
   editDataTes,
   deleteTes,
+  editStatusTes,
 } = require("../../controllers/kompetensi/tesController");
 const router = express.Router();
 
@@ -28,6 +30,12 @@ router.patch(
   editDataSerti
 );
 router.delete("/deleteCertif/:certifId", protected, deleteDataSerti);
+router.patch(
+  "/updateStatusCertif/:certifId",
+  protected,
+  adminOnly,
+  editStatusSerti
+);
 // ============= END SERTIFIKAT ==================
 
 // ================== TES ======================
@@ -36,6 +44,7 @@ router.get("/getTes", protected, getDataTes);
 router.get("/detailTes/:tesId", protected, detailDataTes);
 router.patch("/editTes/:tesId", protected, kompetensiUpload, editDataTes);
 router.delete("/deleteTes/:tesId", protected, deleteTes);
+router.patch("/updateStatusTes/:tesId", protected, adminOnly, editStatusTes);
 // ================== END TES ==================
 
 module.exports = router;

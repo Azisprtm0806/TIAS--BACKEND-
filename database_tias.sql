@@ -292,32 +292,6 @@ CREATE TABLE kolab_external(
 	status INT DEFAULT 0
 );
 
-CREATE TABLE tb_tgs_tambahan_dosen (
-	tugastambahan_id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY NOT NULL,
-	user_id uuid NOT NULL, CONSTRAINT fk_tgstambahan FOREIGN KEY (user_id) REFERENCES tb_users (user_id),
-	jenis_tugas varchar(255) NOT NULL,
-	perguruan_tinggi varchar(255) NOT NULL,
-	unit_kerja varchar(255) NOT NULL,
-	no_sk_penugasan varchar(255) NOT NULL,
-	tgl_mulai_tugas DATE NOT NULL,
-	tgl_akhir_tugas DATE NOT NULL,
-	status INT DEFAULT 0,
-	created_at TIMESTAMP,
-	updated_at TIMESTAMP,
-	deleted_at TIMESTAMP
-)
-CREATE TABLE dokumen_tgs_tambahan(
-	dokumen_id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY NOT NULL,
-	tugastambahan_id uuid NOT NULL, CONSTRAINT fk_tb_dokumen_tgs_tambahan FOREIGN KEY (tugastambahan_id) REFERENCES tb_tgs_tambahan_dosen(tugastambahan_id),
-	nama_dok varchar(180) NOT NULL,
-	keterangan TEXT,
-	tautan_dok varchar(255),
-	file varchar(255) NOT NULL,
-	created_at TIMESTAMP,
-	updated_at TIMESTAMP,
-	deleted_at TIMESTAMP
-);
-
 CREATE TABLE tb_pembicara (
 	pembicara_id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY NOT NULL,
 	user_id uuid NOT NULL, CONSTRAINT fk_tgstambahan FOREIGN KEY (user_id) REFERENCES tb_users (user_id),
@@ -457,11 +431,53 @@ CREATE TABLE dokumen_pengabdian(
 	updated_at TIMESTAMP,
 	deleted_at TIMESTAMP
 );
+
+CREATE TABLE tb_ip_mhs (
+	ip_id uuid DEFAULT uuid_generate_v4() PRIMARY KEY NOT NULL,
+	user_id uuid NOT NULL, CONSTRAINT fk_user_ip FOREIGN KEY (user_id) REFERENCES tb_users(user_id),
+	semester varchar(255) NOT NULL,
+	tahun INT NOT NULL,
+	ip FLOAT(4) NOT NULL,
+	file varchar(255) NOT NULL,
+	status INT DEFAULT 0,
+	created_at TIMESTAMP,
+	updated_at TIMESTAMP,
+	deleted_at TIMESTAMP
+);
+
+CREATE TABLE tb_bimbingan_mhs (
+	bimbingan_id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY NOT NULL,
+	user_id uuid NOT NULL,CONSTRAINT fk_pengajaranMhs FOREIGN KEY (user_id) REFERENCES tb_users (user_id),
+	judul_bimbingan varchar(255) NOT NULL,
+	jenis_bimbingan varchar(255) NOT NULL,
+	program_studi varchar(100) NOT NULL,
+	no_sk_penugasan varchar(100),
+	tgl_sk_penugasan DATE NOT NULL,
+	lokasi_kegiatan varchar(255) NOT NULL,
+	semester varchar (120),
+	status INT DEFAULT 0,
+	created_at TIMESTAMP,
+	updated_at TIMESTAMP,
+	deleted_at TIMESTAMP
+)
+
+CREATE TABLE dosen_pembimbing(
+	dosen_pembimbing_id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY NOT NULL,
+	bimbingan_id uuid NOT NULL, CONSTRAINT fk_tb_bimbingan_mhs FOREIGN KEY (bimbingan_id) REFERENCES tb_bimbingan_mhs (bimbingan_id),
+	user_id uuid NOT NULL, CONSTRAINT fk_tb_anggota_user FOREIGN KEY (user_id) REFERENCES tb_users(user_id),
+	kategori_kegiatan varchar(255) NOT NULL,
+	urutan_promotor int NOT NULL,
+);
+
+CREATE TABLE mhs_bimbingan(
+	mhs_bimbingan_id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY NOT NULL,
+	bimbingan_id uuid NOT NULL, CONSTRAINT fk_tb_bimbingan_mhs FOREIGN KEY (bimbingan_id) REFERENCES tb_bimbingan_mhs (bimbingan_id),
+	user_id uuid NOT NULL, CONSTRAINT fk_tb_anggota_user FOREIGN KEY (user_id) REFERENCES tb_users(user_id),
+	peran varchar(180) NOT NULL
+)
+
 -- ========================================================================================================
 -- ========================================================================================================
-
-
-
 CREATE TABLE tb_pengajaranDosen(
 	namaMatkul varchar(100) NOT NULL,
 	jenisMatkul varchar(50) NOT NULL,
@@ -473,6 +489,7 @@ CREATE TABLE tb_pengajaranDosen(
 	updated_at TIMESTAMP,
 	deleted_at TIMESTAMP
 )
+
 
 CREATE TABLE tb_tugasakhirmhsdsn (
 	pengujian_id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY NOT NULL,
@@ -668,20 +685,7 @@ CREATE TABLE tb_dokumenPribadi (
 
 
 
-CREATE TABLE tb_bimbinganMHSDSN (
-	bimbingan_id,
-	user_id,
-	semesterbim varchar (25),
-	judulbim varchar(255) NOT NULL,
-	jenisbim varchar(100) NOT NULL,
-	programStudibim varchar(50) NOT NULL,
-	noSKPenugasanbim varchar(25),
-	tgalPenugasanbim DATE NOT NULL,
-	lokasiKegiatanbim varchar(100) NOT NULL,
-	created_at TIMESTAMPTZ NOT NULL DEFAULT current_date,
-	updated_at TIMESTAMP,
-	deleted_at TIMESTAMP
-)
+
 
 tb_anggota_bimbingan{
 	bimbingan_id

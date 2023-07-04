@@ -4,7 +4,7 @@ const path = require("path");
 const fs = require("fs-extra");
 const { unixTimestamp, convertDate } = require("../../utils");
 
-exports.addDataProfesi = asyncHandler(async (req, res) => {
+exports.addDataIp = asyncHandler(async (req, res) => {
   const userLoginId = req.user.user_id;
 
   const user = await DB.query("SELECT * FROM tb_users WHERE user_id = $1", [
@@ -12,16 +12,16 @@ exports.addDataProfesi = asyncHandler(async (req, res) => {
   ]);
 
   if (user.rows.length) {
-    const file = req.files;
+    const file = req.file;
     const data = req.body;
 
-    if (Object.keys(file).length === 0) {
+    if (!file) {
       res.status(400);
       throw new Error("Please fill in one file.");
     }
 
-    if (!data.nama_organisasi || !data.peran || !data.mulai_keanggotaan) {
-      fs.unlink(file.file_profesi[0].path, (err) => {
+    if (!data.semester || !data.tahun || !data.ip) {
+      fs.unlink(file.path, (err) => {
         if (err) {
           console.log(err);
         }
@@ -38,16 +38,16 @@ exports.addDataProfesi = asyncHandler(async (req, res) => {
     const values = [
       userLoginId,
       ...Object.values(data),
-      file.file_profesi[0].filename,
+      file.filename,
       convert,
     ];
     const placeholders = keys.map((key, index) => `$${index + 1}`);
 
     // save data
     const saveData = await DB.query(
-      `INSERT INTO tb_anggota_prof(${keys.join(
+      `INSERT INTO tb_ip_mhs(${keys.join(", ")}) VALUES (${placeholders.join(
         ", "
-      )}) VALUES (${placeholders.join(", ")}) returning *`,
+      )}) returning *`,
       values
     );
 
@@ -65,30 +65,30 @@ exports.addDataProfesi = asyncHandler(async (req, res) => {
     throw new Error("User not found.");
   }
 });
-exports.getAllDataProfesi = asyncHandler(async (req, res) => {
+
+exports.getDataIP = asyncHandler(async (req, res) => {
   const userLoginId = req.user.user_id;
 
-  const dataProf = await DB.query(
-    "SELECT * FROM tb_anggota_prof WHERE user_id = $1",
-    [userLoginId]
-  );
+  const dataIP = await DB.query("SELECT * FROM tb_ip_mhs WHERE user_id = $1", [
+    userLoginId,
+  ]);
 
-  if (!dataProf.rows.length) {
+  if (!dataIP.rows.length) {
     res.status(404);
     throw new Error("Data not found.");
   }
 
   res.status(201).json({
-    data: dataProf.rows,
+    data: dataIP.rows,
   });
 });
-exports.detailDataProfesi = asyncHandler(async (req, res) => {
-  const { profId } = req.params;
 
-  const findData = await DB.query(
-    "SELECT * FROM tb_anggota_prof WHERE prof_id = $1",
-    [profId]
-  );
+exports.detailDataIp = asyncHandler(async (req, res) => {
+  const { ipId } = req.params;
+
+  const findData = await DB.query("SELECT * FROM tb_ip_mhs WHERE ip_id = $1", [
+    ipId,
+  ]);
 
   if (!findData.rows.length) {
     res.status(404);
@@ -99,19 +99,19 @@ exports.detailDataProfesi = asyncHandler(async (req, res) => {
     data: findData.rows[0],
   });
 });
-exports.editDataProfesi = asyncHandler(async (req, res) => {
-  const { profId } = req.params;
 
-  const findData = await DB.query(
-    "SELECT * FROM tb_anggota_prof WHERE prof_id = $1",
-    [profId]
-  );
+exports.editDataIp = asyncHandler(async (req, res) => {
+  const { ipId } = req.params;
+
+  const findData = await DB.query("SELECT * FROM tb_ip_mhs WHERE ip_id = $1", [
+    ipId,
+  ]);
 
   if (findData.rows.length) {
-    const file = req.files;
+    const file = req.file;
     const data = req.body;
 
-    if (Object.keys(file).length === 0) {
+    if (!file) {
       const updated_at = unixTimestamp;
       const convert = convertDate(updated_at);
 
@@ -121,7 +121,7 @@ exports.editDataProfesi = asyncHandler(async (req, res) => {
         .join(", ");
 
       const saveData = await DB.query(
-        `UPDATE tb_anggota_prof SET ${setQuery} WHERE prof_id = '${findData.rows[0].prof_id}' `,
+        `UPDATE tb_ip_mhs SET ${setQuery} WHERE ip_id = '${findData.rows[0].ip_id}' `,
         entries.map(([_, value]) => value)
       );
 
@@ -130,15 +130,13 @@ exports.editDataProfesi = asyncHandler(async (req, res) => {
         data: saveData.rows[0],
       });
     } else {
-      await fs.remove(
-        path.join(`public/file-profesi/${findData.rows[0].file}`)
-      );
+      await fs.remove(path.join(`public/file-ipMhs/${findData.rows[0].file}`));
       const updated_at = unixTimestamp;
       const convert = convertDate(updated_at);
 
       const entries = Object.entries({
         ...data,
-        file: file.file_profesi[0].filename,
+        file: file.filename,
         updated_at: convert,
       });
       const setQuery = entries
@@ -146,7 +144,7 @@ exports.editDataProfesi = asyncHandler(async (req, res) => {
         .join(", ");
 
       const saveData = await DB.query(
-        `UPDATE tb_anggota_prof SET ${setQuery} WHERE prof_id = '${findData.rows[0].prof_id}' `,
+        `UPDATE tb_ip_mhs SET ${setQuery} WHERE ip_id = '${findData.rows[0].ip_id}' `,
         entries.map(([_, value]) => value)
       );
 
@@ -160,53 +158,23 @@ exports.editDataProfesi = asyncHandler(async (req, res) => {
     throw new Error("Data not found.");
   }
 });
-exports.deleteDataProfesi = asyncHandler(async (req, res) => {
-  const { profId } = req.params;
 
-  const findData = await DB.query(
-    "SELECT * FROM tb_anggota_prof WHERE prof_id = $1",
-    [profId]
-  );
+exports.deleteDataIp = asyncHandler(async (req, res) => {
+  const { ipId } = req.params;
+
+  const findData = await DB.query("SELECT * FROM tb_ip_mhs WHERE ip_id = $1", [
+    ipId,
+  ]);
 
   if (!findData.rows.length) {
     res.status(400);
     throw new Error("Data not found.");
   }
 
-  await fs.remove(path.join(`public/file-profesi/${findData.rows[0].file}`));
-  await DB.query("DELETE FROM tb_anggota_prof WHERE prof_id = $1", [
-    findData.rows[0].prof_id,
+  await fs.remove(path.join(`public/file-ipMhs/${findData.rows[0].file}`));
+  await DB.query("DELETE FROM tb_ip_mhs WHERE ip_id = $1", [
+    findData.rows[0].ip_id,
   ]);
 
   res.status(200).json({ message: "Data deleted successfully." });
-});
-
-exports.updateStatusProfesi = asyncHandler(async (req, res) => {
-  const { profId } = req.params;
-  const data = req.body;
-
-  if (!data.status) {
-    res.status(400);
-    throw new Error("Pleas fill in all the required fields.");
-  }
-
-  const findData = await DB.query(
-    "SELECT * FROM tb_anggota_prof WHERE prof_id = $1",
-    [profId]
-  );
-
-  if (findData.rows.length) {
-    const updateStatus = await DB.query(
-      `UPDATE tb_anggota_prof SET status = $1 WHERE prof_id = $2`,
-      [data.status, profId]
-    );
-
-    res.status(201).json({
-      message: "Successfully update data.",
-      data: updateStatus.rows[0],
-    });
-  } else {
-    res.status(404);
-    throw new Error("Data not found.");
-  }
 });

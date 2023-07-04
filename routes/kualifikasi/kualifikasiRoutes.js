@@ -1,5 +1,5 @@
 const express = require("express");
-const { protected } = require("../../middleware/authMiddleware");
+const { protected, adminOnly } = require("../../middleware/authMiddleware");
 const { kualifikasiUpload } = require("../../middleware/kualifikasiUpload");
 const {
   addRiwayatPekerjaan,
@@ -7,6 +7,7 @@ const {
   detailDataRiwayatPekerjaan,
   editDataRiwayatPekerjaan,
   deleteDataRiwayatPekerjaan,
+  editStatusRiwayatPekerjaan,
 } = require("../../controllers/kualifikasi/riwayatPekerjaanController");
 const {
   detailDataPendidikan,
@@ -14,6 +15,7 @@ const {
   editDataPendidikan,
   addPendidikan,
   getDataPendidikan,
+  editStatusPendidikan,
 } = require("../../controllers/kualifikasi/pendidikanController");
 const router = express.Router();
 
@@ -41,6 +43,12 @@ router.delete(
   protected,
   deleteDataRiwayatPekerjaan
 );
+router.patch(
+  "/updateStatusRwyt/:rwytId",
+  protected,
+  adminOnly,
+  editStatusRiwayatPekerjaan
+);
 // ============= END RIWAYAT PEKERJAAN ==================
 
 // ================== PENDIDIKAN FORMAL ======================
@@ -54,6 +62,12 @@ router.patch(
   editDataPendidikan
 );
 router.delete("/deletePend/:pendId", protected, deleteDataPendidikan);
+router.patch(
+  "/updateStatusPend/:pendId",
+  protected,
+  adminOnly,
+  editStatusPendidikan
+);
 // ================== END PENDIDIKAN FORMAL ==================
 
 module.exports = router;

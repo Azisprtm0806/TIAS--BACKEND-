@@ -53,21 +53,6 @@ exports.createDataSerti = asyncHandler(async (req, res) => {
       throw new Error("Nomor SK already exists.");
     }
 
-    const existsNamaSerti = await DB.query(
-      `SELECT * FROM tb_sertifikasi WHERE CAST(user_id AS TEXT) LIKE '%${user.rows[0].user_id}%' AND nama_serti LIKE '%${data.nama_serti}%'`
-    );
-
-    if (existsNamaSerti.rows.length) {
-      fs.unlink(file.file_serti[0].path, (err) => {
-        if (err) {
-          console.log(err);
-        }
-        return;
-      });
-      res.status(400);
-      throw new Error("Name Certification already exists.");
-    }
-
     const created_at = unixTimestamp;
     const convert = convertDate(created_at);
 
@@ -264,4 +249,34 @@ exports.deleteDataSerti = asyncHandler(async (req, res) => {
   ]);
 
   res.status(200).json({ message: "Data deleted successfully." });
+});
+
+exports.editStatusSerti = asyncHandler(async (req, res) => {
+  const { certifId } = req.params;
+  const data = req.body;
+
+  if (!data.status) {
+    res.status(400);
+    throw new Error("Pleas fill in all the required fields.");
+  }
+
+  const findData = await DB.query(
+    "SELECT * FROM tb_sertifikasi WHERE sertifikat_id = $1",
+    [certifId]
+  );
+
+  if (findData.rows.length) {
+    const updateStatus = await DB.query(
+      `UPDATE tb_sertifikasi SET status = $1 WHERE sertifikat_id = $2`,
+      [data.status, certifId]
+    );
+
+    res.status(201).json({
+      message: "Successfully update data.",
+      data: updateStatus.rows[0],
+    });
+  } else {
+    res.status(404);
+    throw new Error("Data not found.");
+  }
 });

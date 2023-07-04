@@ -57,3 +57,15 @@ exports.adminDosenOnly = asyncHandler(async (req, res, next) => {
     throw new Error("Not Authorized as an Dosen/Admin.");
   }
 });
+
+exports.adminMhsOnly = asyncHandler(async (req, res, next) => {
+  if (
+    (req.user && req.user.role === "Mahasiswa") ||
+    req.user.role === "Admin"
+  ) {
+    next();
+  } else {
+    res.status(401);
+    throw new Error("Not Authorized as an Mahasiswa.");
+  }
+});
