@@ -1,5 +1,5 @@
 const express = require("express");
-const { protected } = require("../../middleware/authMiddleware");
+const { protected, adminOnly } = require("../../middleware/authMiddleware");
 const { hkiUpload } = require("../../middleware/pelaks-penelitian/hkiUpload");
 const {
   addDataHki,
@@ -11,6 +11,7 @@ const {
   addDokumenHki,
   detailDokumenHki,
   editDokumenHki,
+  updateStatusHki,
 } = require("../../controllers/pelaks-penelitian/hkiController");
 
 const router = express.Router();
@@ -21,7 +22,7 @@ router.get("/getDataHki", protected, getDataHki);
 router.get("/detailHki/:hkiId", protected, detailDataHki);
 router.patch("/editHki/:hkiId", protected, hkiUpload, editDataHki);
 router.delete("/deleteHki/:hkiId", protected, deleteHki);
-
+router.patch("/updateStatus/:hkiId", protected, adminOnly, updateStatusHki);
 // ============= END PENELITIAN =====================
 
 // ============= DOKUMEN PENELITIAN ==============

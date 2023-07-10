@@ -1,5 +1,5 @@
 const express = require("express");
-const { protected } = require("../../middleware/authMiddleware");
+const { protected, adminOnly } = require("../../middleware/authMiddleware");
 const {
   addDataPublikasi,
   getDataPublikasi,
@@ -10,6 +10,7 @@ const {
   detailDokumenPublikasi,
   deleteDokumenPublikasi,
   editDokumenPublikasi,
+  updateStatusPublikasi,
 } = require("../../controllers/pelaks-penelitian/publikasiKaryaController");
 const {
   publikasiKaryaUpload,
@@ -28,6 +29,12 @@ router.patch(
   editDataPublikasi
 );
 router.delete("/deletePublikasi/:publikasiId", protected, deleteDataPublikasi);
+router.patch(
+  "/updateStatus/:publikasiId",
+  protected,
+  adminOnly,
+  updateStatusPublikasi
+);
 // ============= END PENELITIAN =====================
 
 // ============= DOKUMEN PUBLIKASI ==============

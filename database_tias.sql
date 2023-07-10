@@ -110,10 +110,17 @@ CREATE TABLE tb_kepangkatanDosen (
 	updated_at TIMESTAMP,
 	deleted_at TIMESTAMP
 );
-
+CREATE TABLE kategori_sertifikasi(
+	id uuid DEFAULT uuid_generate_v4() PRIMARY KEY NOT NULL,
+	kode varchar(25) NOT NULL, ([LK, Lokal], [RG, Regional], [NL, Nasional], [IL, Internasional])
+	nama_kategori varchar(120) NOT NULL, 
+	point INT NOT NULL
+)
+ALTER TABLE tb_sertifikasi ADD FOREIGN KEY (id_kategori) REFERENCES kategori_sertifikasi(id)
 CREATE TABLE tb_sertifikasi (
 	sertifikat_id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY,
 	user_id uuid NOT NULL, CONSTRAINT fk_tb_sertifikasi FOREIGN KEY (user_id) REFERENCES tb_users (user_id),
+	kategori_id uuid NOT NULL, CONSTRAINT fk_tb_kategori FOREIGN KEY (kategori_id) REFERENCES kategori_sertifikasi (id),
 	jenis_serti varchar(255) NOT NULL,
 	nama_serti varchar(255) NOT NULL,
 	bidang_studi varchar(255) NOT NULL,
@@ -219,9 +226,18 @@ CREATE TABLE tb_anggota_prof (
 	deleted_at TIMESTAMP
 )
 
+CREATE TABLE kategori_prestasi(
+	id uuid DEFAULT uuid_generate_v4() PRIMARY KEY NOT NULL,
+	kode varchar(25) NOT NULL,
+	nama_kategori varchar(120) NOT NULL,
+	juara INT NOT NULL,
+	point INT NOT NULL
+)
+
 CREATE TABLE tb_penghargaan (
 	penghargaan_id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY NOT NULL,
 	user_id uuid NOT NULL, CONSTRAINT fk_tb_penghargaan FOREIGN KEY (user_id) REFERENCES tb_users (user_id),
+	kategori_id NOT NULL, CONSTRAINT fk_tb_kategori FOREIGN KEY (kategori_id) REFERENCES kategori_prestasi(id),
 	tingkat_peng varchar(255) NOT NULL,
 	jenis_peng varchar(255) NOT NULL,
 	nama_peng varchar(255) NOT NULL,
@@ -322,9 +338,18 @@ CREATE TABLE dokumen_pembicara(
 	deleted_at TIMESTAMP
 );
 
+CREATE TABLE kategori_publikasi (
+	id uuid DEFAULT uuid_generate_v4() PRIMARY KEY NOT NULL,
+	kode varchar(25) NOT NULL,
+	nama_kategori varchar(120) NOT NULL,
+	tingkatan varchar(120) NOT NULL,
+	point INT NOT NULL,
+)
+
 CREATE TABLE tb_publikasi_karya(
 	publikasi_id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY NOT NULL,
 	user_id uuid NOT NULL,CONSTRAINT fk_tb_publikasiKarya_dosen FOREIGN KEY (user_id) REFERENCES tb_users (user_id),
+	kategori_id uuid NOT NULL, CONSTRAINT fk_tb_kategori FOREIGN KEY (kategori_id) REFERENCES kategori_publikasi(id),
 	judul_artikel varchar(255) NOT NULL,
 	jenis varchar(255) NOT NULL,
 	kategori_capain varchar(255),
@@ -362,9 +387,17 @@ CREATE TABLE penulis_publikasi (
 	correspond BOOLEAN
 );
 
+CREATE TABLE kategori_hki (
+	id uuid DEFAULT uuid_generate_v4() PRIMARY KEY NOT NULL,
+	kode varchar(25) NOT NULL, ([LK, Lokal], [RG, Regional], [NO, Nasional], [IN, Internasional])
+	nama_kategori varchar(120) NOT NULL,
+	point INT NOT NULL,
+)
+
 CREATE TABLE tb_hki (
 	hki_id uuid DEFAULT uuid_generate_v4() PRIMARY KEY NOT NULL,
 	user_id uuid NOT NULL, CONSTRAINT fk_user_hki FOREIGN KEY (user_id) REFERENCES tb_users(user_id),
+	kategori_id uuid NOT NULL, CONSTRAINT fk_kategori_hki FOREIGN KEY(kategori_id) REFERENCES kategori_hki(id),
 	jenis_hki varchar (255),
 	judul_hki varchar (255) NOT NULL,
 	tgl_terbit_hki DATE,
@@ -374,6 +407,7 @@ CREATE TABLE tb_hki (
 	updated_at TIMESTAMP,
 	deleted_at TIMESTAMP
 );
+
 
 CREATE TABLE dokumen_hki(
 	dokumen_id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY NOT NULL,
@@ -476,8 +510,77 @@ CREATE TABLE mhs_bimbingan(
 	peran varchar(180) NOT NULL
 )
 
+
 -- ========================================================================================================
 -- ========================================================================================================
+
+-- =======================================================
+-- 									KATEGORI KEGIATAN
+-- =======================================================
+
+
+-- DONE
+CREATE TABLE kategori_hki (
+	id uuid DEFAULT uuid_generate_v4() PRIMARY KEY NOT NULL,
+	kode varchar(25) NOT NULL, ([LK, Lokal], [RG, Regional], [NO, Nasional], [IN, Internasional])
+	nama_kategori varchar(120) NOT NULL,
+	point INT NOT NULL,
+)
+
+CREATE TABLE rekomendasi (
+	id uuid DEFAULT uuid_generate_v4() PRIMARY KEY NOT NULL,
+	value INT NOT NULL,
+	point INT NOT NULL
+)
+
+CREATE TABLE rekomendasi_mhs(
+	id uuid DEFAULT uuid_generate_v4() PRIMARY KEY NOT NULL,
+	user_id uuid NOT NULL,CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES tb_users (user_id),
+	mahasiswa_id uuid NOT NULL, CONSTRAINT fk_mhs FOREIGN KEY (mahasiswa_id) REFERENCES tb_users (user_id), 
+	body varchar(255) NOT NULL,
+	created_at TIMESTAMP
+) 
+
+-- DONE
+CREATE TABLE kategori_publikasi (
+	id uuid DEFAULT uuid_generate_v4() PRIMARY KEY NOT NULL,
+	kode varchar(25) NOT NULL,
+	nama_kategori varchar(120) NOT NULL,
+	tingkatan varchar(120) NOT NULL,
+	point INT NOT NULL,
+)
+
+-- DONE
+CREATE TABLE kategori_sertifikasi(
+	id uuid DEFAULT uuid_generate_v4() PRIMARY KEY NOT NULL,
+	kode varchar(25) NOT NULL, ([LK, Lokal], [RG, Regional], [NL, Nasional], [IL, Internasional])
+	nama_kategori varchar(120) NOT NULL, 
+	point INT NOT NULL
+)
+
+-- DONE
+CREATE TABLE kategori_prestasi(
+	id uuid DEFAULT uuid_generate_v4() PRIMARY KEY NOT NULL,
+	kode varchar(25) NOT NULL,
+	nama_kategori varchar(120) NOT NULL,
+	juara INT NOT NULL,
+	point INT NOT NULL
+)
+
+
+CREATE TABLE kategori_ip(
+	id uuid DEFAULT uuid_generate_v4() PRIMARY KEY NOT NULL,
+	ip varchar(10) NOT NULL,
+	point INT NOT NULL
+)
+
+
+
+-- =======================================================
+-- 									END KATEGORI KEGIATAN
+-- =======================================================
+
+
 CREATE TABLE tb_pengajaranDosen(
 	namaMatkul varchar(100) NOT NULL,
 	jenisMatkul varchar(50) NOT NULL,
@@ -539,7 +642,10 @@ CREATE TABLE tb_pembelajaranMhs (
 	updated_at TIMESTAMP,
 	deleted_at TIMESTAMP
 )
----- ALL DONE -----
+
+
+-- ==========================================================================================
+-- ==========================================================================================
 
 
 

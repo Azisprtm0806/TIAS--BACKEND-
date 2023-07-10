@@ -22,6 +22,7 @@ exports.addDataPublikasi = asyncHandler(async (req, res) => {
     }
 
     if (
+      !data.kategori_id ||
       !data.judul_artikel ||
       !data.jenis ||
       !data.nama_jurnal ||
@@ -40,6 +41,7 @@ exports.addDataPublikasi = asyncHandler(async (req, res) => {
     }
     // ==============PUBLIKASI KARYA===================
     const dataPublikasi = {
+      kategori_id: data.kategori_id,
       judul_artikel: data.judul_artikel,
       jenis: data.jenis,
       kategori_capain: data.kategori_capain,
@@ -143,18 +145,18 @@ exports.addDataPublikasi = asyncHandler(async (req, res) => {
 exports.getDataPublikasi = asyncHandler(async (req, res) => {
   const userLoginId = req.user.user_id;
 
-  const dataPublikasi = await DB.query(
-    "SELECT * FROM tb_publikasi_karya WHERE user_id = $1",
-    [userLoginId]
-  );
+  const query = `SELECT tb_publikasi_karya.*, kategori_publikasi.nama_kategori, kategori_publikasi.tingkatan, kategori_publikasi.point FROM tb_publikasi_karya JOIN kategori_publikasi ON tb_publikasi_karya.kategori_id=kategori_publikasi.id WHERE tb_publikasi_karya.user_id = '${userLoginId}' and status = 1`;
 
-  if (!dataPublikasi.rows.length) {
-    res.status(404);
-    throw new Error("Data not found.");
-  }
+  const dataPublikasi = await DB.query(query);
+
+  const jumlahData = await DB.query(
+    "SELECT COUNT(*) FROM tb_publikasi_karya WHERE user_id = $1 and status = $2",
+    [userLoginId, 1]
+  );
 
   res.status(201).json({
     data: dataPublikasi.rows,
+    jumlahData: jumlahData.rows[0].count,
   });
 });
 
@@ -208,6 +210,7 @@ exports.editDataPublikasi = asyncHandler(async (req, res) => {
     }
 
     const dataPublikasi = {
+      kategori_id: data.kategori_id,
       judul_artikel: data.judul_artikel,
       jenis: data.jenis,
       kategori_capain: data.kategori_capain,
@@ -365,6 +368,38 @@ exports.deleteDataPublikasi = asyncHandler(async (req, res) => {
   ]);
 
   res.status(200).json({ message: "Data deleted successfully." });
+});
+
+exports.updateStatusPublikasi = asyncHandler(async (req, res) => {
+  const { publikasiId } = req.params;
+  const data = req.body;
+
+  if (!data.status) {
+    res.status(400);
+    throw new Error("Pleas fill in all the required fields.");
+  }
+
+  const findData = await DB.query(
+    "SELECT * FROM tb_publikasi_karya WHERE publikasi_id = $1",
+    [publikasiId]
+  );
+
+  if (findData.rows.length) {
+    const updated_at = unixTimestamp;
+    const convert = convertDate(updated_at);
+    const updateStatus = await DB.query(
+      `UPDATE tb_publikasi_karya SET status = $1, updated_at = $2 WHERE publikasi_id = $3`,
+      [data.status, convert, publikasiId]
+    );
+
+    res.status(201).json({
+      message: "Successfully update data.",
+      data: updateStatus.rows[0],
+    });
+  } else {
+    res.status(404);
+    throw new Error("Data not found.");
+  }
 });
 
 // ====================  END PUBLIKASI KARYA ==========================

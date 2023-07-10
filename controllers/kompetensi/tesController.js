@@ -74,9 +74,10 @@ exports.createDataTes = asyncHandler(async (req, res) => {
 exports.getDataTes = asyncHandler(async (req, res) => {
   const userLoginId = req.user.user_id;
 
-  const dataTes = await DB.query("SELECT * FROM tb_tes WHERE user_id = $1", [
-    userLoginId,
-  ]);
+  const dataTes = await DB.query(
+    "SELECT * FROM tb_tes WHERE user_id = $1 and status = $2",
+    [userLoginId, 1]
+  );
 
   if (!dataTes.rows.length) {
     res.status(404);
@@ -199,9 +200,11 @@ exports.editStatusTes = asyncHandler(async (req, res) => {
   ]);
 
   if (findData.rows.length) {
+    const updated_at = unixTimestamp;
+    const convert = convertDate(updated_at);
     const updateStatus = await DB.query(
-      `UPDATE tb_tes SET status = $1 WHERE tes_id = $2`,
-      [data.status, tesId]
+      `UPDATE tb_tes SET status = $1, updated_at = $2 WHERE tes_id = $3`,
+      [data.status, convert, tesId]
     );
 
     res.status(201).json({

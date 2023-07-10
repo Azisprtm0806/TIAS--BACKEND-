@@ -4,6 +4,8 @@ const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
 const authRoutes = require("./routes/Authentication/authRoutes");
+const adminRoutes = require("./routes/Admin/adminRoutes");
+const usersRoutes = require("./routes/Users/userRoutes");
 const profileRoutes = require("./routes/profile/profileRoutes");
 const kualifikasiRoutes = require("./routes/kualifikasi/kualifikasiRoutes");
 const kompetensiRoutes = require("./routes/kompetensi/kompetensiRoutes");
@@ -16,6 +18,7 @@ const publikasiKaryaRoutes = require("./routes/pelaks-penelitian/publikasiKaryaR
 const hkiRoutes = require("./routes/pelaks-penelitian/hkiRoutes");
 const pengabdianRoutes = require("./routes/pelaks-pengabdian/pengabdianRoutes");
 const pembicaraRoutes = require("./routes/pelaks-pengabdian/pembicaraRoutes");
+const rekomendasiRoutes = require("./routes/rekomendasi/rekomendasiRoutes");
 const errorHandler = require("./helper/errorHandler");
 
 const app = express();
@@ -35,8 +38,15 @@ app.use(
 // 1  Disetujui
 // 2  Ditolak
 
+// STATUS MAHASISWA
+// 0 Aktif
+// 1 Non Aktif
+// 2 Alumni
+
 // Website API
 app.use("/auth", authRoutes);
+app.use("/admin", adminRoutes);
+app.use("/users", usersRoutes);
 app.use("/profile", profileRoutes);
 app.use("/kualifikasi", kualifikasiRoutes);
 app.use("/kompetensi", kompetensiRoutes);
@@ -49,6 +59,7 @@ app.use("/penelitian/publikasi-karya", publikasiKaryaRoutes);
 app.use("/penelitian/hki", hkiRoutes);
 app.use("/pengabdian", pengabdianRoutes);
 app.use("/pengabdian/pembicara", pembicaraRoutes);
+app.use("/rekomendasi", rekomendasiRoutes);
 
 // Mobile Application API dibawah
 

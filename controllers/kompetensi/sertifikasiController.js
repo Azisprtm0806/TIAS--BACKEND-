@@ -22,6 +22,7 @@ exports.createDataSerti = asyncHandler(async (req, res) => {
 
     if (
       !data.jenis_serti ||
+      !data.kategori_id ||
       !data.nama_serti ||
       !data.bidang_studi ||
       !data.nomor_sk ||
@@ -74,9 +75,16 @@ exports.createDataSerti = asyncHandler(async (req, res) => {
     );
 
     if (saveData.rows) {
+      const kategori_id = saveData.rows[0].kategori_id;
+
+      const data = await DB.query(
+        "SELECT tb_sertifikasi.*, kategori_sertifikasi.nama_kategori, kategori_sertifikasi.point FROM tb_sertifikasi NATURAL JOIN kategori_sertifikasi WHERE id = $1",
+        [kategori_id]
+      );
+
       res.status(200).json({
         message: "Successfull created data.",
-        data: saveData.rows[0],
+        data: data.rows[0],
       });
     } else {
       res.status(400);
@@ -91,18 +99,18 @@ exports.createDataSerti = asyncHandler(async (req, res) => {
 exports.getDataSerti = asyncHandler(async (req, res) => {
   const userLoginId = req.user.user_id;
 
-  const dataSerti = await DB.query(
-    "SELECT * FROM tb_sertifikasi WHERE user_id = $1",
-    [userLoginId]
-  );
+  const query = `SELECT tb_sertifikasi.*, kategori_sertifikasi.nama_kategori, kategori_sertifikasi.point FROM tb_sertifikasi JOIN kategori_sertifikasi ON tb_sertifikasi.kategori_id=kategori_sertifikasi.id WHERE tb_sertifikasi.user_id = '${userLoginId}' and status = 1`;
 
-  if (!dataSerti.rows.length) {
-    res.status(404);
-    throw new Error("Data not found.");
-  }
+  const dataSerti = await DB.query(query);
+
+  const jumlahData = await DB.query(
+    "SELECT COUNT(*) FROM tb_sertifikasi WHERE user_id = $1 and status = $2",
+    [userLoginId, 1]
+  );
 
   res.status(201).json({
     data: dataSerti.rows,
+    totalData: jumlahData.rows[0].count,
   });
 });
 
@@ -266,9 +274,11 @@ exports.editStatusSerti = asyncHandler(async (req, res) => {
   );
 
   if (findData.rows.length) {
+    const updated_at = unixTimestamp;
+    const convert = convertDate(updated_at);
     const updateStatus = await DB.query(
-      `UPDATE tb_sertifikasi SET status = $1 WHERE sertifikat_id = $2`,
-      [data.status, certifId]
+      `UPDATE tb_sertifikasi SET status = $1, updated_at = $2 WHERE sertifikat_id = $3`,
+      [data.status, convert, certifId]
     );
 
     res.status(201).json({

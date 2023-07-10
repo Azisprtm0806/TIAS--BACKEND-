@@ -22,6 +22,7 @@ exports.addDataHki = asyncHandler(async (req, res) => {
     }
 
     if (
+      !data.kategori_id ||
       !data.judul_hki ||
       !data.penulis ||
       !data.nama_dok ||
@@ -38,6 +39,7 @@ exports.addDataHki = asyncHandler(async (req, res) => {
     }
     // ==============PUBLIKASI KARYA===================
     const dataHki = {
+      kategori_id: data.kategori_id,
       jenis_hki: data.jenis_hki,
       judul_hki: data.judul_hki,
       tgl_terbit_hki: data.tgl_terbit_hki,
@@ -128,17 +130,18 @@ exports.addDataHki = asyncHandler(async (req, res) => {
 exports.getDataHki = asyncHandler(async (req, res) => {
   const userLoginId = req.user.user_id;
 
-  const dataHki = await DB.query("SELECT * FROM tb_hki WHERE user_id = $1", [
-    userLoginId,
-  ]);
+  const query = `SELECT tb_hki.*, kategori_hki.nama_kategori, kategori_hki.point FROM tb_hki JOIN kategori_hki ON tb_hki.kategori_id=kategori_hki.id WHERE tb_hki.user_id = '${userLoginId}' and status = 1`;
 
-  if (!dataHki.rows.length) {
-    res.status(404);
-    throw new Error("Data not found.");
-  }
+  const dataHki = await DB.query(query);
+
+  const jumlahData = await DB.query(
+    "SELECT COUNT(*) FROM tb_hki WHERE user_id = $1 and status = $2",
+    [userLoginId, 1]
+  );
 
   res.status(201).json({
     data: dataHki.rows,
+    jumlahData: jumlahData.rows[0].count,
   });
 });
 
@@ -225,6 +228,7 @@ exports.editDataHki = asyncHandler(async (req, res) => {
     }
 
     const dataHki = {
+      kategori_id: data.kategori_id,
       jenis_hki: data.jenis_hki,
       judul_hki: data.judul_hki,
       tgl_terbit_hki: data.tgl_terbit_hki,
@@ -338,6 +342,37 @@ exports.editDataHki = asyncHandler(async (req, res) => {
     res.status(404).json({
       message: "Data not found",
     });
+  }
+});
+
+exports.updateStatusHki = asyncHandler(async (req, res) => {
+  const { hkiId } = req.params;
+  const data = req.body;
+
+  if (!data.status) {
+    res.status(400);
+    throw new Error("Pleas fill in all the required fields.");
+  }
+
+  const findData = await DB.query("SELECT * FROM tb_hki WHERE hki_id = $1", [
+    hkiId,
+  ]);
+
+  if (findData.rows.length) {
+    const updated_at = unixTimestamp;
+    const convert = convertDate(updated_at);
+    const updateStatus = await DB.query(
+      `UPDATE tb_hki SET status = $1, updated_at = $2 WHERE hki_id = $3`,
+      [data.status, convert, hkiId]
+    );
+
+    res.status(201).json({
+      message: "Successfully update data.",
+      data: updateStatus.rows[0],
+    });
+  } else {
+    res.status(404);
+    throw new Error("Data not found.");
   }
 });
 // ====================  HKI ==========================

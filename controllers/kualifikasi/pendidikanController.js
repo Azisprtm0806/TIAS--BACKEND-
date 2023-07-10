@@ -139,8 +139,8 @@ exports.getDataPendidikan = asyncHandler(async (req, res) => {
   const userLoginId = req.user.user_id;
 
   const dataPend = await DB.query(
-    "SELECT * FROM tb_pend_formal WHERE user_id = $1",
-    [userLoginId]
+    "SELECT * FROM tb_pend_formal WHERE user_id = $1 and status = $2",
+    [userLoginId, 1]
   );
 
   if (!dataPend.rows.length) {
@@ -353,9 +353,11 @@ exports.editStatusPendidikan = asyncHandler(async (req, res) => {
   );
 
   if (findData.rows.length) {
+    const updated_at = unixTimestamp;
+    const convert = convertDate(updated_at);
     const updateStatus = await DB.query(
-      `UPDATE tb_pend_formal SET status = $1 WHERE pend_id = $2`,
-      [data.status, pendId]
+      `UPDATE tb_pend_formal SET status = $1, updated_at = $2 WHERE pend_id = $2`,
+      [data.status, convert, pendId]
     );
 
     res.status(201).json({

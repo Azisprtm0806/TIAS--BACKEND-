@@ -245,9 +245,11 @@ exports.editStatusRiwayatPekerjaan = asyncHandler(async (req, res) => {
   );
 
   if (findData.rows.length) {
+    const updated_at = unixTimestamp;
+    const convert = convertDate(updated_at);
     const updateStatus = await DB.query(
-      `UPDATE tb_riwayat_pekerjaan SET status = $1 WHERE rwyt_pekerjaan_id = $2`,
-      [data.status, rwytId]
+      `UPDATE tb_riwayat_pekerjaan SET status = $1, updated_at = $2 WHERE rwyt_pekerjaan_id = $2`,
+      [data.status, convert, rwytId]
     );
 
     res.status(201).json({

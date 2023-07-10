@@ -1,18 +1,16 @@
 const express = require("express");
-const { protected } = require("../../middleware/authMiddleware");
+const { protected, adminOnly } = require("../../middleware/authMiddleware");
 const {
   addDataPenelitian,
-  addDataAnggotaPenelitian,
   addDokumenPenelitian,
   getDataPenelitian,
   detailDataPenelitian,
   detailDokumenPenelitian,
   deleteDokumenPenelitian,
   editDokumenPenelitian,
-  addAnggotaDosen,
-  addAnggotaMhs,
   deleteDataPenelitian,
   editDataPenelitian,
+  updateStatusPenelitian,
 } = require("../../controllers/pelaks-penelitian/penelitianController");
 const {
   dokumenPenelitianUpload,
@@ -40,7 +38,12 @@ router.delete(
   protected,
   deleteDataPenelitian
 );
-
+router.patch(
+  "/updateStatus/:penelitianId",
+  protected,
+  adminOnly,
+  updateStatusPenelitian
+);
 // ============= END PENELITIAN =====================
 
 // ============= DOKUMEN PENELITIAN ==============

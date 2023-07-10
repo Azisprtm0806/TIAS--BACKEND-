@@ -312,6 +312,38 @@ exports.editDataPembicara = asyncHandler(async (req, res) => {
     });
   }
 });
+
+exports.updateStatusPembicara = asyncHandler(async (req, res) => {
+  const { pembicaraId } = req.params;
+  const data = req.body;
+
+  if (!data.status) {
+    res.status(400);
+    throw new Error("Pleas fill in all the required fields.");
+  }
+
+  const findData = await DB.query(
+    "SELECT * FROM tb_pembicara WHERE pembicara_id = $1",
+    [pembicaraId]
+  );
+
+  if (findData.rows.length) {
+    const updated_at = unixTimestamp;
+    const convert = convertDate(updated_at);
+    const updateStatus = await DB.query(
+      `UPDATE tb_pembicara SET status = $1, updated_at = $2 WHERE pembicara_id = $3`,
+      [data.status, convert, pembicaraId]
+    );
+
+    res.status(201).json({
+      message: "Successfully update data.",
+      data: updateStatus.rows[0],
+    });
+  } else {
+    res.status(404);
+    throw new Error("Data not found.");
+  }
+});
 // ==================== END  Pembicara ==========================
 
 // ===================== DOKUMEN PEMBICARA =====================

@@ -2,6 +2,7 @@ const express = require("express");
 const {
   protected,
   adminDosenOnly,
+  adminOnly,
 } = require("../../middleware/authMiddleware");
 const {
   addDataBimbingan,
@@ -9,6 +10,7 @@ const {
   getDataBimbingan,
   editDataBimbingan,
   deleteDataBimbingan,
+  updateStatusBimbingan,
 } = require("../../controllers/pelaks-pendidikan/bimbinganController");
 
 const router = express.Router();
@@ -34,6 +36,12 @@ router.delete(
   protected,
   adminDosenOnly,
   deleteDataBimbingan
+);
+router.patch(
+  "/updateStatus/:bimbinganId",
+  protected,
+  adminOnly,
+  updateStatusBimbingan
 );
 
 // ============= END PENELITIAN =====================

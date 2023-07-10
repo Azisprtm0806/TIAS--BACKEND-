@@ -51,7 +51,6 @@ const fileUpload = multer({
 const kompetensiUpload = (req, res, next) => {
   fileUpload(req, res, (err) => {
     if (err) {
-      console.log(err);
       // Handle Multer errors
       if (err instanceof multer.MulterError) {
         return res.status(400).json({ message: err.message });

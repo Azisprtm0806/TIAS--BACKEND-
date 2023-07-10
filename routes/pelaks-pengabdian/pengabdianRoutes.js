@@ -1,5 +1,5 @@
 const express = require("express");
-const { protected } = require("../../middleware/authMiddleware");
+const { protected, adminOnly } = require("../../middleware/authMiddleware");
 const {
   pengabdianUpload,
 } = require("../../middleware/pelaks-pengabdian/pengabdianUpload");
@@ -13,6 +13,7 @@ const {
   detailDokumenPengabdian,
   deleteDokumenPengabdian,
   editDokumenPengabdian,
+  updateStatusPengabdian,
 } = require("../../controllers/pelaks-pengabdian/pengabdianController");
 
 const router = express.Router();
@@ -25,15 +26,19 @@ router.patch(
   "/editPengabdian/:pengabdianId",
   protected,
   pengabdianUpload,
-  editDataPengabdian,
-  detailDokumenPengabdian
+  editDataPengabdian
 );
 router.delete(
   "/deletePengabdian/:pengabdianId",
   protected,
   deleteDataPengabdian
 );
-
+router.patch(
+  "/updateStatusPengabdian/:pengabdianId",
+  protected,
+  adminOnly,
+  updateStatusPengabdian
+);
 // ============= END PENGABDIAN =====================
 
 // ============= DOKUMEN PENGABDIAN ==============

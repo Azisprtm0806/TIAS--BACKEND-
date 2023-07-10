@@ -297,8 +297,16 @@ exports.loginUser = asyncHandler(async (req, res) => {
   }
   // END
 
-  // // Generate Token
   const id = user.rows[0].user_id;
+
+  const findDataPribadi = await DB.query("SELECT * FROM tb_data_pribadi WHERE user_id = $1", [id]);
+
+  if(!findDataPribadi.rows.length){
+    res.status(400);
+    throw new Error("Please complete the purchased personal data first.");
+  }
+
+  // // Generate Token
   const token = generateToken(id);
 
   if (user.rows.length && passwordIsCorrect) {

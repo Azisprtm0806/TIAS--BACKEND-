@@ -180,7 +180,6 @@ exports.deleteDataProfesi = asyncHandler(async (req, res) => {
 
   res.status(200).json({ message: "Data deleted successfully." });
 });
-
 exports.updateStatusProfesi = asyncHandler(async (req, res) => {
   const { profId } = req.params;
   const data = req.body;
@@ -196,9 +195,11 @@ exports.updateStatusProfesi = asyncHandler(async (req, res) => {
   );
 
   if (findData.rows.length) {
+    const updated_at = unixTimestamp;
+    const convert = convertDate(updated_at);
     const updateStatus = await DB.query(
-      `UPDATE tb_anggota_prof SET status = $1 WHERE prof_id = $2`,
-      [data.status, profId]
+      `UPDATE tb_anggota_prof SET status = $1, updated_at = $2 WHERE prof_id = $2`,
+      [data.status, convert, profId]
     );
 
     res.status(201).json({

@@ -1,5 +1,5 @@
 const express = require("express");
-const { protected } = require("../../middleware/authMiddleware");
+const { protected, adminOnly } = require("../../middleware/authMiddleware");
 const {
   addDataPembicara,
   getDataPembicara,
@@ -10,6 +10,7 @@ const {
   detailDokumenPembicara,
   deleteDokumenPembicara,
   editDokumenPembicara,
+  updateStatusPembicara,
 } = require("../../controllers/pelaks-pengabdian/pembicaraController");
 const {
   dokumenPembicaraUpload,
@@ -33,6 +34,12 @@ router.patch(
   editDataPembicara
 );
 router.delete("/deletePembicara/:pembicaraId", protected, deleteDataPembicara);
+router.patch(
+  "/updateStatusPembicara/:pembicaraId",
+  protected,
+  adminOnly,
+  updateStatusPembicara
+);
 
 // ============= END PENELITIAN =====================
 
