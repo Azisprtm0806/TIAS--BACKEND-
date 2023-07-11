@@ -19,6 +19,7 @@ const hkiRoutes = require("./routes/pelaks-penelitian/hkiRoutes");
 const pengabdianRoutes = require("./routes/pelaks-pengabdian/pengabdianRoutes");
 const pembicaraRoutes = require("./routes/pelaks-pengabdian/pembicaraRoutes");
 const rekomendasiRoutes = require("./routes/rekomendasi/rekomendasiRoutes");
+const kategoriRoutes = require("./routes/kategori/kategoriRoutes");
 const errorHandler = require("./helper/errorHandler");
 
 const app = express();
@@ -60,6 +61,7 @@ app.use("/penelitian/hki", hkiRoutes);
 app.use("/pengabdian", pengabdianRoutes);
 app.use("/pengabdian/pembicara", pembicaraRoutes);
 app.use("/rekomendasi", rekomendasiRoutes);
+app.use("/kategori", kategoriRoutes);
 
 // Mobile Application API dibawah
 

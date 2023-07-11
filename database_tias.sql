@@ -1,6 +1,7 @@
 CREATE DATABASE db_SmartKampus
 
 CREATE TYPE jenis_kelamin AS ENUM ('L','P');
+CREATE TYPE status_mhs AS ENUM ('ACTIVE','NON ACTIVE', 'ALUMNI');
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
@@ -35,6 +36,9 @@ create table token(
   CONSTRAINT fk_user FOREIGN KEY(user_id) REFERENCES tb_users(user_id)
 );
 
+
+CREATE TYPE status_mhs AS ENUM ('ACTIVE','NON ACTIVE', 'ALUMNI');
+
 CREATE TABLE tb_data_pribadi (
 	dp_id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY,
 	user_id uuid UNIQUE NOT NULL, CONSTRAINT fk_tb_dataPribadi FOREIGN KEY (user_id) REFERENCES tb_users (user_id),
@@ -56,11 +60,12 @@ CREATE TABLE tb_data_pribadi (
 	provinsi varchar(100) NOT NULL,
 	kode_pos CHAR(5) NOT NULL,
 	no_hp varchar(13) NOT NULL,
-	status_kawin varchar(100) NOT NULL,
+	status_kawin BOOLEAN NOT NULL,
 	nama_pasangan varchar(100),
 	nip_pasangan CHAR(18),
 	pekerjaan_pasangan varchar(255),
 	tanggal_pns_pasangan DATE,
+	
 	status INT DEFAULT 0,
 	created_at TIMESTAMP,
 	updated_at TIMESTAMP,
@@ -527,12 +532,7 @@ CREATE TABLE kategori_hki (
 	point INT NOT NULL,
 )
 
-CREATE TABLE rekomendasi (
-	id uuid DEFAULT uuid_generate_v4() PRIMARY KEY NOT NULL,
-	value INT NOT NULL,
-	point INT NOT NULL
-)
-
+-- DONE
 CREATE TABLE rekomendasi_mhs(
 	id uuid DEFAULT uuid_generate_v4() PRIMARY KEY NOT NULL,
 	user_id uuid NOT NULL,CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES tb_users (user_id),

@@ -299,9 +299,12 @@ exports.loginUser = asyncHandler(async (req, res) => {
 
   const id = user.rows[0].user_id;
 
-  const findDataPribadi = await DB.query("SELECT * FROM tb_data_pribadi WHERE user_id = $1", [id]);
+  const findDataPribadi = await DB.query(
+    "SELECT * FROM tb_data_pribadi WHERE user_id = $1",
+    [id]
+  );
 
-  if(!findDataPribadi.rows.length){
+  if (!findDataPribadi.rows.length) {
     res.status(400);
     throw new Error("Please complete the purchased personal data first.");
   }
@@ -610,38 +613,25 @@ exports.verifyUser = asyncHandler(async (req, res) => {
 
   // verify user
   const verifyUser = await DB.query(
-    "UPDATE tb_users SET isverified = $1 WHERE user_id = $2",
+    "UPDATE tb_users SET isverified = $1 WHERE user_id = $2 returning *",
     [true, user.rows[0].user_id]
   );
 
-  const token = generateToken(user.rows[0].user_id);
+  if (verifyUser.rows[0].isverified) {
+    const token = generateToken(user.rows[0].user_id);
+    // Send HTTP-only Cookie
+    res.cookie("token", token, {
+      path: "/",
+      httpOnly: true,
+      expires: new Date(Date.now() + 1000 * 86400), // 1 day
+      sameSite: "none",
+      secure: true,
+    });
 
-  const { npm, nidn, email, role, userAgent, isverified, created_at } =
-    verifyUser.rows[0];
-
-  // Send HTTP-only Cookie
-  res.cookie("token", token, {
-    path: "/",
-    httpOnly: true,
-    expires: new Date(Date.now() + 1000 * 86400), // 1 day
-    sameSite: "none",
-    secure: true,
-  });
-
-  res.status(200).json({
-    message: "Account verification successfully",
-    data: {
-      user_id,
-      npm,
-      nidn,
-      email,
-      role,
-      userAgent,
-      isverified,
-      created_at,
-      token,
-    },
-  });
+    res.status(200).json({
+      message: "Account verification successfully",
+    });
+  }
 });
 
 exports.logout = asyncHandler(async (req, res) => {

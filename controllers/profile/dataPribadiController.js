@@ -152,3 +152,34 @@ exports.deleteDataPribadi = asyncHandler(async (req, res) => {
 
   res.status(200).json({ message: "Data deleted successfully." });
 });
+
+exports.updateStatusMhs = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const data = req.body;
+
+  if (!data.status_mhs) {
+    res.status(400);
+    throw new Error("Pleas fill in all the required fields.");
+  }
+
+  const findData = await DB.query(
+    "SELECT * FROM tb_data_pribadi WHERE user_id = $1",
+    [id]
+  );
+
+  if (findData.rows.length) {
+    const statusUpdate = await DB.query(
+      "UPDATE tb_data_pribadi SET status_mhs = $1 WHERE user_id = $2 returning *",
+      [data.status_mhs, id]
+    );
+
+    if (statusUpdate.rows.length) {
+      res.status(200).json({
+        message: "Status Student updated",
+      });
+    }
+  } else {
+    res.status(404);
+    throw new Error("Data not found.");
+  }
+});

@@ -54,6 +54,22 @@ exports.createDataSerti = asyncHandler(async (req, res) => {
       throw new Error("Nomor SK already exists.");
     }
 
+    const cekKategoriId = await DB.query(
+      "SELECT * FROM kategori_sertifikasi WHERE id = $1",
+      [data.kategori_id]
+    );
+
+    if (!cekKategoriId.rows.length) {
+      fs.unlink(file.file_serti[0].path, (err) => {
+        if (err) {
+          console.log(err);
+        }
+        return;
+      });
+      res.status(400);
+      throw new Error("Kategori Id Not Found.");
+    }
+
     const created_at = unixTimestamp;
     const convert = convertDate(created_at);
 
@@ -75,11 +91,16 @@ exports.createDataSerti = asyncHandler(async (req, res) => {
     );
 
     if (saveData.rows) {
-      const kategori_id = saveData.rows[0].kategori_id;
-
       const data = await DB.query(
         "SELECT tb_sertifikasi.*, kategori_sertifikasi.nama_kategori, kategori_sertifikasi.point FROM tb_sertifikasi NATURAL JOIN kategori_sertifikasi WHERE id = $1",
-        [kategori_id]
+        [saveData.rows[0].kategori_id]
+      );
+
+      const point = data.rows[0].point;
+
+      await DB.query(
+        "UPDATE tb_data_pribadi SET point_sertifikasi = point_sertifikasi + $1",
+        [point]
       );
 
       res.status(200).json({

@@ -4,6 +4,7 @@ const {
   editDataPribadi,
   getDataPribadi,
   deleteDataPribadi,
+  updateStatusMhs,
 } = require("../../controllers/profile/dataPribadiController");
 const {
   createDokumenPribadi,
@@ -40,6 +41,7 @@ router.post("/createData", protected, createDataPribadi);
 router.patch("/editData", protected, editDataPribadi);
 router.get("/getDataPribadi", protected, getDataPribadi);
 router.delete("/deleteData/:dataID", protected, adminOnly, deleteDataPribadi);
+router.patch("/updateStatusMhs/:id", protected, adminOnly, updateStatusMhs);
 // ============= END DATA PRIBADI =============
 
 // ============= DOKUMEN PRIBADI ==============
