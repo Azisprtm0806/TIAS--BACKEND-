@@ -58,8 +58,14 @@ exports.getDataIP = asyncHandler(async (req, res) => {
     [userLoginId, 1]
   );
 
+  const jumlahData = await DB.query(
+    "SELECT COUNT(*) FROM tb_ip_mhs WHERE user_id = $1 and status = $2",
+    [userLoginId, 1]
+  );
+
   res.status(201).json({
     data: dataIP.rows,
+    totalData: jumlahData.rows[0].count,
   });
 });
 

@@ -79,13 +79,14 @@ exports.getDataTes = asyncHandler(async (req, res) => {
     [userLoginId, 1]
   );
 
-  if (!dataTes.rows.length) {
-    res.status(404);
-    throw new Error("Data not found.");
-  }
+  const jumlahData = await DB.query(
+    "SELECT COUNT(*) FROM tb_tes WHERE user_id = $1 and status = $2",
+    [userLoginId, 1]
+  );
 
   res.status(201).json({
     data: dataTes.rows,
+    totalData: jumlahData.rows[0].count,
   });
 });
 

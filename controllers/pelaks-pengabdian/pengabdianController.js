@@ -149,8 +149,14 @@ exports.getDataPengabdian = asyncHandler(async (req, res) => {
     [userLoginId, 1]
   );
 
+  const jumlahData = await DB.query(
+    "SELECT COUNT(*) FROM tb_pengabdian WHERE user_id = $1 and status = $2",
+    [userLoginId, 1]
+  );
+
   res.status(201).json({
     data: dataPengabdian.rows,
+    totalData: jumlahData.rows[0].count,
   });
 });
 
