@@ -124,14 +124,9 @@ exports.getDataBimbingan = asyncHandler(async (req, res) => {
   const userLoginId = req.user.user_id;
 
   const findData = await DB.query(
-    "SELECT * FROM tb_bimbingan_mhs WHERE user_id = $1",
-    [userLoginId]
+    "SELECT * FROM tb_bimbingan_mhs WHERE user_id = $1 and status = $2",
+    [userLoginId, 1]
   );
-
-  if (!findData.rows.length) {
-    res.status(404);
-    throw new Error("Data not found.");
-  }
 
   res.status(201).json({
     data: findData.rows,

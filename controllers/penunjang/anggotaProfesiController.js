@@ -69,14 +69,9 @@ exports.getAllDataProfesi = asyncHandler(async (req, res) => {
   const userLoginId = req.user.user_id;
 
   const dataProf = await DB.query(
-    "SELECT * FROM tb_anggota_prof WHERE user_id = $1",
-    [userLoginId]
+    "SELECT * FROM tb_anggota_prof WHERE user_id = $1 and status = $2",
+    [userLoginId, 1]
   );
-
-  if (!dataProf.rows.length) {
-    res.status(404);
-    throw new Error("Data not found.");
-  }
 
   res.status(201).json({
     data: dataProf.rows,

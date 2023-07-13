@@ -168,14 +168,9 @@ exports.getDataPenelitian = asyncHandler(async (req, res) => {
   const userLoginId = req.user.user_id;
 
   const dataPenelitian = await DB.query(
-    "SELECT * FROM tb_penelitian WHERE user_id = $1",
-    [userLoginId]
+    "SELECT * FROM tb_penelitian WHERE user_id = $1 and status = $2",
+    [userLoginId, 1]
   );
-
-  if (!dataPenelitian.rows.length) {
-    res.status(404);
-    throw new Error("Data not found.");
-  }
 
   res.status(201).json({
     data: dataPenelitian.rows,

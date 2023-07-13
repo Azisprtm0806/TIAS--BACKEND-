@@ -212,9 +212,24 @@ exports.updateStatusPenghargaan = asyncHandler(async (req, res) => {
     const updated_at = unixTimestamp;
     const convert = convertDate(updated_at);
     const updateStatus = await DB.query(
-      `UPDATE tb_penghargaan SET status = $1, updated_at = $2 WHERE penghargaan_id = $2`,
+      `UPDATE tb_penghargaan SET status = $1, updated_at = $2 WHERE penghargaan_id = $3 returning *`,
       [data.status, convert, pengId]
     );
+
+    if (updateStatus.rows[0].status === 1) {
+      const data = await DB.query(
+        "SELECT tb_penghargaan.*, kategori_prestasi.nama_kategori, kategori_prestasi.juara, kategori_prestasi.point FROM tb_penghargaan NATURAL JOIN kategori_prestasi WHERE id = $1",
+        [updateStatus.rows[0].kategori_id]
+      );
+
+      const point = data.rows[0].point;
+      const userId = data.rows[0].user_id;
+
+      await DB.query(
+        "UPDATE tb_data_pribadi SET point_prestasi = point_prestasi + $1 WHERE user_id = $2",
+        [point, userId]
+      );
+    }
 
     res.status(201).json({
       message: "Successfully update data.",

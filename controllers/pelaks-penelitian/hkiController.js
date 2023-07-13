@@ -362,9 +362,24 @@ exports.updateStatusHki = asyncHandler(async (req, res) => {
     const updated_at = unixTimestamp;
     const convert = convertDate(updated_at);
     const updateStatus = await DB.query(
-      `UPDATE tb_hki SET status = $1, updated_at = $2 WHERE hki_id = $3`,
+      `UPDATE tb_hki SET status = $1, updated_at = $2 WHERE hki_id = $3 returning *`,
       [data.status, convert, hkiId]
     );
+
+    if (updateStatus.rows[0].status === 1) {
+      const data = await DB.query(
+        "SELECT tb_hki.*, kategori_hki.nama_kategori, kategori_hki.point FROM tb_hki NATURAL JOIN kategori_hki WHERE id = $1",
+        [updateStatus.rows[0].kategori_id]
+      );
+
+      const point = data.rows[0].point;
+      const userId = data.rows[0].user_id;
+
+      await DB.query(
+        "UPDATE tb_data_pribadi SET point_hki = point_hki + $1 WHERE user_id = $2",
+        [point, userId]
+      );
+    }
 
     res.status(201).json({
       message: "Successfully update data.",

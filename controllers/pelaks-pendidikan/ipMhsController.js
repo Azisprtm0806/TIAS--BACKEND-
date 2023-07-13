@@ -12,21 +12,10 @@ exports.addDataIp = asyncHandler(async (req, res) => {
   ]);
 
   if (user.rows.length) {
-    const file = req.file;
     const data = req.body;
 
-    if (!file) {
-      res.status(400);
-      throw new Error("Please fill in one file.");
-    }
-
+    console.log(data);
     if (!data.semester || !data.tahun || !data.ip) {
-      fs.unlink(file.path, (err) => {
-        if (err) {
-          console.log(err);
-        }
-        return;
-      });
       res.status(400);
       throw new Error("Pleas fill in all the required fields.");
     }
@@ -34,13 +23,8 @@ exports.addDataIp = asyncHandler(async (req, res) => {
     const created_at = unixTimestamp;
     const convert = convertDate(created_at);
 
-    const keys = ["user_id", ...Object.keys(data), "file", "created_at"];
-    const values = [
-      userLoginId,
-      ...Object.values(data),
-      file.filename,
-      convert,
-    ];
+    const keys = ["user_id", ...Object.keys(data), "created_at"];
+    const values = [userLoginId, ...Object.values(data), convert];
     const placeholders = keys.map((key, index) => `$${index + 1}`);
 
     // save data
@@ -69,14 +53,10 @@ exports.addDataIp = asyncHandler(async (req, res) => {
 exports.getDataIP = asyncHandler(async (req, res) => {
   const userLoginId = req.user.user_id;
 
-  const dataIP = await DB.query("SELECT * FROM tb_ip_mhs WHERE user_id = $1", [
-    userLoginId,
-  ]);
-
-  if (!dataIP.rows.length) {
-    res.status(404);
-    throw new Error("Data not found.");
-  }
+  const dataIP = await DB.query(
+    "SELECT * FROM tb_ip_mhs WHERE user_id = $1 and status = $2",
+    [userLoginId, 1]
+  );
 
   res.status(201).json({
     data: dataIP.rows,
@@ -108,51 +88,25 @@ exports.editDataIp = asyncHandler(async (req, res) => {
   ]);
 
   if (findData.rows.length) {
-    const file = req.file;
     const data = req.body;
 
-    if (!file) {
-      const updated_at = unixTimestamp;
-      const convert = convertDate(updated_at);
+    const updated_at = unixTimestamp;
+    const convert = convertDate(updated_at);
 
-      const entries = Object.entries({ ...data, updated_at: convert });
-      const setQuery = entries
-        .map(([key, _], index) => `${key} = $${index + 1}`)
-        .join(", ");
+    const entries = Object.entries({ ...data, updated_at: convert });
+    const setQuery = entries
+      .map(([key, _], index) => `${key} = $${index + 1}`)
+      .join(", ");
 
-      const saveData = await DB.query(
-        `UPDATE tb_ip_mhs SET ${setQuery} WHERE ip_id = '${findData.rows[0].ip_id}' `,
-        entries.map(([_, value]) => value)
-      );
+    const saveData = await DB.query(
+      `UPDATE tb_ip_mhs SET ${setQuery} WHERE ip_id = '${findData.rows[0].ip_id}' `,
+      entries.map(([_, value]) => value)
+    );
 
-      res.status(201).json({
-        message: "Successfully update data.",
-        data: saveData.rows[0],
-      });
-    } else {
-      await fs.remove(path.join(`public/file-ipMhs/${findData.rows[0].file}`));
-      const updated_at = unixTimestamp;
-      const convert = convertDate(updated_at);
-
-      const entries = Object.entries({
-        ...data,
-        file: file.filename,
-        updated_at: convert,
-      });
-      const setQuery = entries
-        .map(([key, _], index) => `${key} = $${index + 1}`)
-        .join(", ");
-
-      const saveData = await DB.query(
-        `UPDATE tb_ip_mhs SET ${setQuery} WHERE ip_id = '${findData.rows[0].ip_id}' `,
-        entries.map(([_, value]) => value)
-      );
-
-      res.status(201).json({
-        message: "Successfully update data.",
-        data: saveData.rows[0],
-      });
-    }
+    res.status(201).json({
+      message: "Successfully update data.",
+      data: saveData.rows[0],
+    });
   } else {
     res.status(404);
     throw new Error("Data not found.");
@@ -170,8 +124,6 @@ exports.deleteDataIp = asyncHandler(async (req, res) => {
     res.status(400);
     throw new Error("Data not found.");
   }
-
-  await fs.remove(path.join(`public/file-ipMhs/${findData.rows[0].file}`));
   await DB.query("DELETE FROM tb_ip_mhs WHERE ip_id = $1", [
     findData.rows[0].ip_id,
   ]);
@@ -196,9 +148,23 @@ exports.updateStatusIp = asyncHandler(async (req, res) => {
     const updated_at = unixTimestamp;
     const convert = convertDate(updated_at);
     const updateStatus = await DB.query(
-      `UPDATE tb_ip_mhs SET status = $1, updated_at = $2 WHERE ip_id = $3`,
+      `UPDATE tb_ip_mhs SET status = $1, updated_at = $2 WHERE ip_id = $3 returning *`,
       [data.status, convert, ipId]
     );
+
+    const ip = updateStatus.rows[0].ip;
+    let pointIp;
+    if (ip == 0 || ip < 1.0) {
+      pointIp = 175;
+    } else if (ip >= 1.0 || ip <= 1.4) {
+      pointIp = 240;
+    } else if (ip >= 1.5 || ip <= 1.9) {
+      pointIp = 300;
+    } else if (ip >= 2.0 || ip <= 2.4) {
+      pointIp = 355;
+    } else if (ip >= 2.5 || ip <= 2.9) {
+      pointIp = 7;
+    }
 
     res.status(201).json({
       message: "Successfully update data.",

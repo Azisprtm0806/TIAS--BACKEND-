@@ -145,14 +145,9 @@ exports.getDataPengabdian = asyncHandler(async (req, res) => {
   const userLoginId = req.user.user_id;
 
   const dataPengabdian = await DB.query(
-    "SELECT * FROM tb_pengabdian WHERE user_id = $1",
-    [userLoginId]
+    "SELECT * FROM tb_pengabdian WHERE user_id = $1 and status = $2",
+    [userLoginId, 1]
   );
-
-  if (!dataPengabdian.rows.length) {
-    res.status(404);
-    throw new Error("Data not found.");
-  }
 
   res.status(201).json({
     data: dataPengabdian.rows,

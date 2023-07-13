@@ -101,14 +101,9 @@ exports.getDataJabatan = asyncHandler(async (req, res) => {
   const userLoginId = req.user.user_id;
 
   const dataJabatan = await DB.query(
-    "SELECT * FROM tb_jabatan_dosen WHERE user_id = $1",
-    [userLoginId]
+    "SELECT * FROM tb_jabatan_dosen WHERE user_id = $1 and status = $2",
+    [userLoginId, 1]
   );
-
-  if (!dataJabatan.rows.length) {
-    res.status(404);
-    throw new Error("Data not found.");
-  }
 
   res.status(201).json({
     data: dataJabatan.rows,
@@ -260,4 +255,36 @@ exports.deleteDataJabatan = asyncHandler(async (req, res) => {
   ]);
 
   res.status(200).json({ message: "Data deleted successfully." });
+});
+
+exports.updateStatusJabatan = asyncHandler(async (req, res) => {
+  const { jabId } = req.params;
+  const data = req.body;
+
+  if (!data.status) {
+    res.status(400);
+    throw new Error("Pleas fill in all the required fields.");
+  }
+
+  const findData = await DB.query(
+    "SELECT * FROM tb_jabatan_dosen WHERE jabatan_id = $1",
+    [jabId]
+  );
+
+  if (findData.rows.length) {
+    const updated_at = unixTimestamp;
+    const convert = convertDate(updated_at);
+    const updateStatus = await DB.query(
+      `UPDATE tb_jabatan_dosen SET status = $1, updated_at = $2 WHERE jabatan_id = $3 returning *`,
+      [data.status, convert, jabId]
+    );
+
+    res.status(201).json({
+      message: "Successfully update data.",
+      data: updateStatus.rows[0],
+    });
+  } else {
+    res.status(404);
+    throw new Error("Data not found.");
+  }
 });

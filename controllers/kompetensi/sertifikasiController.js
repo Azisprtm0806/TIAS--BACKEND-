@@ -91,21 +91,8 @@ exports.createDataSerti = asyncHandler(async (req, res) => {
     );
 
     if (saveData.rows) {
-      const data = await DB.query(
-        "SELECT tb_sertifikasi.*, kategori_sertifikasi.nama_kategori, kategori_sertifikasi.point FROM tb_sertifikasi NATURAL JOIN kategori_sertifikasi WHERE id = $1",
-        [saveData.rows[0].kategori_id]
-      );
-
-      const point = data.rows[0].point;
-
-      await DB.query(
-        "UPDATE tb_data_pribadi SET point_sertifikasi = point_sertifikasi + $1",
-        [point]
-      );
-
       res.status(200).json({
         message: "Successfull created data.",
-        data: data.rows[0],
       });
     } else {
       res.status(400);
@@ -298,9 +285,24 @@ exports.editStatusSerti = asyncHandler(async (req, res) => {
     const updated_at = unixTimestamp;
     const convert = convertDate(updated_at);
     const updateStatus = await DB.query(
-      `UPDATE tb_sertifikasi SET status = $1, updated_at = $2 WHERE sertifikat_id = $3`,
+      `UPDATE tb_sertifikasi SET status = $1, updated_at = $2 WHERE sertifikat_id = $3 returning *`,
       [data.status, convert, certifId]
     );
+
+    if (updateStatus.rows[0].status === 1) {
+      const data = await DB.query(
+        "SELECT tb_sertifikasi.*, kategori_sertifikasi.nama_kategori, kategori_sertifikasi.point FROM tb_sertifikasi NATURAL JOIN kategori_sertifikasi WHERE id = $1",
+        [updateStatus.rows[0].kategori_id]
+      );
+
+      const point = data.rows[0].point;
+      const userId = data.rows[0].user_id;
+
+      await DB.query(
+        "UPDATE tb_data_pribadi SET point_sertifikasi = point_sertifikasi + $1 WHERE user_id = $2",
+        [point, userId]
+      );
+    }
 
     res.status(201).json({
       message: "Successfully update data.",

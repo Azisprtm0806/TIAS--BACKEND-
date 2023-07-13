@@ -143,11 +143,6 @@ exports.getDataPendidikan = asyncHandler(async (req, res) => {
     [userLoginId, 1]
   );
 
-  if (!dataPend.rows.length) {
-    res.status(404);
-    throw new Error("Data not found.");
-  }
-
   res.status(201).json({
     data: dataPend.rows,
   });

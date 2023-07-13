@@ -94,11 +94,6 @@ exports.getDataPribadi = asyncHandler(async (req, res) => {
     [userLoginId]
   );
 
-  if (!dataPribadi.rows.length) {
-    res.status(404);
-    throw new Error("Data not found.");
-  }
-
   res.status(201).json({
     data: dataPribadi.rows[0],
   });

@@ -80,15 +80,10 @@ exports.getDokPribadi = asyncHandler(async (req, res) => {
     [userLoginId]
   );
 
-  if (dataDokumen.rows.length) {
-    res.status(200).json({
-      message: "Success get data.",
-      data: dataDokumen.rows,
-    });
-  } else {
-    res.status(404);
-    throw new Error("Data not found.");
-  }
+  res.status(200).json({
+    message: "Success get data.",
+    data: dataDokumen.rows,
+  });
 });
 
 exports.detailDokPribadi = asyncHandler(async (req, res) => {

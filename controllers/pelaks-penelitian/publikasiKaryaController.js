@@ -28,7 +28,7 @@ exports.addDataPublikasi = asyncHandler(async (req, res) => {
       !data.nama_jurnal ||
       !data.penulis ||
       !data.nama_dok ||
-      !data.keterangan
+      !data.keterangan_dok
     ) {
       fs.unlink(file.path, (err) => {
         if (err) {
@@ -99,7 +99,7 @@ exports.addDataPublikasi = asyncHandler(async (req, res) => {
     // ==============DOKUMEN PUBLIKASI===================
     const dokumenPublikasi = {
       nama_dok: data.nama_dok,
-      keterangan: data.keterangan,
+      keterangan_dok: data.keterangan_dok,
       tautan_dok: data.tautan_dok,
       file: file.filename,
     };
@@ -388,9 +388,24 @@ exports.updateStatusPublikasi = asyncHandler(async (req, res) => {
     const updated_at = unixTimestamp;
     const convert = convertDate(updated_at);
     const updateStatus = await DB.query(
-      `UPDATE tb_publikasi_karya SET status = $1, updated_at = $2 WHERE publikasi_id = $3`,
+      `UPDATE tb_publikasi_karya SET status = $1, updated_at = $2 WHERE publikasi_id = $3 returning *`,
       [data.status, convert, publikasiId]
     );
+
+    if (updateStatus.rows[0].status === 1) {
+      const data = await DB.query(
+        "SELECT tb_publikasi_karya.*, kategori_publikasi.nama_kategori, kategori_publikasi.tingkatan, kategori_publikasi.point FROM tb_publikasi_karya NATURAL JOIN kategori_publikasi WHERE id = $1",
+        [updateStatus.rows[0].kategori_id]
+      );
+
+      const point = data.rows[0].point;
+      const userId = data.rows[0].user_id;
+
+      await DB.query(
+        "UPDATE tb_data_pribadi SET point_publikasi = point_publikasi + $1 WHERE user_id = $2",
+        [point, userId]
+      );
+    }
 
     res.status(201).json({
       message: "Successfully update data.",

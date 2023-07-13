@@ -17,6 +17,7 @@ const {
   protected,
   dosenOnly,
   adminOnly,
+  adminDosenOnly,
 } = require("../../middleware/authMiddleware");
 const {
   addDataJabatan,
@@ -24,6 +25,7 @@ const {
   editDataJabatan,
   deleteDataJabatan,
   detailDataJabatan,
+  updateStatusJabatan,
 } = require("../../controllers/profile/jabatanController");
 const {
   addDataKepangkatan,
@@ -31,6 +33,7 @@ const {
   editDataKepangkatan,
   deleteDataKepangkatan,
   detailDataKepangkatan,
+  updateStatusKepangkatan,
 } = require("../../controllers/profile/kepangkatanController");
 const { profileUpload } = require("../../middleware/profileUpload");
 
@@ -53,26 +56,38 @@ router.delete("/deleteDokumen/:dokId", protected, deleteDataDok);
 // ============ END DOKUMEN PRIBADI =============
 
 // ============ JABATAN DOSEN =============
-router.post("/addJabatan", protected, dosenOnly, profileUpload, addDataJabatan);
-router.get("/getDataJabatan", protected, dosenOnly, getDataJabatan);
+router.post(
+  "/addJabatan",
+  protected,
+  adminDosenOnly,
+  profileUpload,
+  addDataJabatan
+);
+router.get("/getDataJabatan", protected, adminDosenOnly, getDataJabatan);
 router.get(
   "/detailDataJabatan/:jabId",
   protected,
-  dosenOnly,
+  adminDosenOnly,
   detailDataJabatan
 );
 router.patch(
   "/editDataJabatan/:jabId",
   protected,
-  dosenOnly,
+  adminDosenOnly,
   profileUpload,
   editDataJabatan
 );
 router.delete(
   "/deleteDataJabatan/:jabId",
   protected,
-  dosenOnly,
+  adminDosenOnly,
   deleteDataJabatan
+);
+router.patch(
+  "/updateStatusJabatan/:jabId",
+  protected,
+  adminOnly,
+  updateStatusJabatan
 );
 // =============== END JABATAN DOSEN ================
 
@@ -80,29 +95,40 @@ router.delete(
 router.post(
   "/addKepangkatan",
   protected,
-  dosenOnly,
+  adminDosenOnly,
   profileUpload,
   addDataKepangkatan
 );
-router.get("/getDataKepangkatan", protected, dosenOnly, getDataKepangkatan);
+router.get(
+  "/getDataKepangkatan",
+  protected,
+  adminDosenOnly,
+  getDataKepangkatan
+);
 router.get(
   "/detailDataPangkat/:pangkatId",
   protected,
-  dosenOnly,
+  adminDosenOnly,
   detailDataKepangkatan
 );
 router.patch(
   "/editPangkat/:pangkatId",
   protected,
-  dosenOnly,
+  adminDosenOnly,
   profileUpload,
   editDataKepangkatan
 );
 router.delete(
   "/deletePangkat/:pangkatId",
   protected,
-  dosenOnly,
+  adminDosenOnly,
   deleteDataKepangkatan
+);
+router.patch(
+  "/updateStatusPangkat/:pangkatId",
+  protected,
+  adminOnly,
+  updateStatusKepangkatan
 );
 // ============== END KEPANGAKATAN DOSEN ==================
 

@@ -5,9 +5,6 @@ const {
   adminOnly,
 } = require("../../middleware/authMiddleware");
 const {
-  ipMhsUpload,
-} = require("../../middleware/pelaks-pendidikan/ipMhsUpload");
-const {
   addDataIp,
   getDataIP,
   detailDataIp,
@@ -19,10 +16,10 @@ const {
 const router = express.Router();
 
 // ============= PENELITIAN ======================
-router.post("/add", protected, adminMhsOnly, ipMhsUpload, addDataIp);
+router.post("/add", protected, adminMhsOnly, addDataIp);
 router.get("/getDataIp", protected, adminMhsOnly, getDataIP);
 router.get("/detail/:ipId", protected, adminMhsOnly, detailDataIp);
-router.patch("/edit/:ipId", protected, adminMhsOnly, ipMhsUpload, editDataIp);
+router.patch("/edit/:ipId", protected, adminMhsOnly, editDataIp);
 router.delete("/delete/:ipId", protected, adminMhsOnly, deleteDataIp);
 router.patch("/updateStatus/:ipId", protected, adminOnly, updateStatusIp);
 // ============= END PENELITIAN =====================
