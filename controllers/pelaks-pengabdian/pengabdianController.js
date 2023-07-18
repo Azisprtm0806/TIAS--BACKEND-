@@ -145,13 +145,13 @@ exports.getDataPengabdian = asyncHandler(async (req, res) => {
   const userLoginId = req.user.user_id;
 
   const dataPengabdian = await DB.query(
-    "SELECT * FROM tb_pengabdian WHERE user_id = $1 and status = $2",
-    [userLoginId, 1]
+    "SELECT * FROM tb_pengabdian WHERE user_id = $1 and status = $2 and is_deleted = $3",
+    [userLoginId, 1, false]
   );
 
   const jumlahData = await DB.query(
-    "SELECT COUNT(*) FROM tb_pengabdian WHERE user_id = $1 and status = $2",
-    [userLoginId, 1]
+    "SELECT COUNT(*) FROM tb_pengabdian WHERE user_id = $1 and status = $2 and is_deleted = $3",
+    [userLoginId, 1, false]
   );
 
   res.status(201).json({
@@ -179,9 +179,11 @@ exports.detailDataPengabdian = asyncHandler(async (req, res) => {
   );
 
   res.status(201).json({
-    dataPengabdian: findDataPengabdian.rows,
-    anggotaPengabdian: anggotaPenelitian.rows,
-    dataDokumen: findDataDokumen.rows,
+    data: {
+      dataPengabdian: findDataPengabdian.rows,
+      anggotaPengabdian: anggotaPenelitian.rows,
+      dataDokumen: findDataDokumen.rows,
+    },
   });
 });
 
@@ -341,25 +343,13 @@ exports.deleteDataPengabdian = asyncHandler(async (req, res) => {
     throw new Error("Data not found.");
   }
 
-  const findDokumen = await DB.query(
-    "SELECT * FROM dokumen_pengabdian WHERE pengabdian_id = $1",
-    [pengabdianId]
+  const created_at = unixTimestamp;
+  const convert = convertDate(created_at);
+
+  await DB.query(
+    "UPDATE tb_pengabdian SET is_deleted = $1, deleted_at = $2 WHERE pengabdian_id = $3",
+    [true, convert, pengabdianId]
   );
-
-  const dataDokumen = findDokumen.rows;
-  dataDokumen.forEach(async (dok) => {
-    await fs.remove(path.join(`public/dokumen-pengabdian/${dok.file}`));
-  });
-
-  await DB.query("DELETE FROM anggota_pengabdian WHERE pengabdian_id = $1", [
-    pengabdianId,
-  ]);
-  await DB.query("DELETE FROM dokumen_pengabdian WHERE pengabdian_id = $1", [
-    pengabdianId,
-  ]);
-  await DB.query("DELETE FROM tb_pengabdian WHERE pengabdian_id = $1", [
-    pengabdianId,
-  ]);
 
   res.status(200).json({ message: "Data deleted successfully." });
 });

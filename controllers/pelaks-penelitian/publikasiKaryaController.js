@@ -276,6 +276,18 @@ exports.editDataPublikasi = asyncHandler(async (req, res) => {
         res.status(400);
         throw new Error("Please fill in one file.");
       }
+
+      if (!data.nama_dok || !data.keterangan) {
+        fs.unlink(file.path, (err) => {
+          if (err) {
+            console.log(err);
+          }
+          return;
+        });
+        res.status(400);
+        throw new Error("Pleas fill in all the required dokumen fields.");
+      }
+
       function filterData(data) {
         const result = {};
 
@@ -347,25 +359,28 @@ exports.deleteDataPublikasi = asyncHandler(async (req, res) => {
     throw new Error("Data not found.");
   }
 
-  const findDokumen = await DB.query(
-    "SELECT * FROM dokumen_publikasi WHERE publikasi_id = $1",
-    [publikasiId]
+  const created_at = unixTimestamp;
+  const convert = convertDate(created_at);
+
+  const deletePublikasi = await DB.query(
+    "UPDATE tb_publikasi_karya SET is_deleted = $1, deleted_at = $2 WHERE publikasi_id = $3 returning *",
+    [true, convert, publikasiId]
   );
 
-  const dataDokumen = findDokumen.rows;
-  dataDokumen.forEach(async (dok) => {
-    await fs.remove(path.join(`public/dokumen-publikasi-karya/${dok.file}`));
-  });
+  if (deletePublikasi.rows.length) {
+    const data = await DB.query(
+      "SELECT tb_publikasi_karya.*, kategori_publikasi.nama_kategori, kategori_publikasi.tingkatan, kategori_publikasi.point FROM tb_publikasi_karya NATURAL JOIN kategori_publikasi WHERE id = $1",
+      [deletePublikasi.rows[0].kategori_id]
+    );
 
-  await DB.query("DELETE FROM penulis_publikasi WHERE publikasi_id = $1", [
-    publikasiId,
-  ]);
-  await DB.query("DELETE FROM dokumen_publikasi WHERE publikasi_id = $1", [
-    publikasiId,
-  ]);
-  await DB.query("DELETE FROM tb_publikasi_karya WHERE publikasi_id = $1", [
-    publikasiId,
-  ]);
+    const point = data.rows[0].point;
+    const userId = data.rows[0].user_id;
+
+    await DB.query(
+      "UPDATE tb_data_pribadi SET point_penelitian = point_penelitian - $1 WHERE user_id = $2",
+      [point, userId]
+    );
+  }
 
   res.status(200).json({ message: "Data deleted successfully." });
 });
@@ -402,7 +417,7 @@ exports.updateStatusPublikasi = asyncHandler(async (req, res) => {
       const userId = data.rows[0].user_id;
 
       await DB.query(
-        "UPDATE tb_data_pribadi SET point_publikasi = point_publikasi + $1 WHERE user_id = $2",
+        "UPDATE tb_data_pribadi SET point_penelitian = point_penelitian + $1 WHERE user_id = $2",
         [point, userId]
       );
     }

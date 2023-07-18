@@ -42,6 +42,18 @@ exports.addRekomendasi = asyncHandler(async (req, res) => {
     );
 
     if (saveData.rows) {
+      const jumlahDataRekomen = await DB.query(
+        "SELECT COUNT(*) FROM rekomendasi_mhs WHERE mahasiswa_id = $1",
+        [data.mahasiswa_id]
+      );
+
+      const totalData = jumlahDataRekomen.rows[0].count * 100;
+
+      await DB.query(
+        "UPDATE tb_data_pribadi SET point_rekomendasi = $1 WHERE user_id = $2",
+        [totalData, data.mahasiswa_id]
+      );
+
       res.status(200).json({
         message: "Successfull created data.",
         data: saveData.rows[0],
@@ -55,3 +67,28 @@ exports.addRekomendasi = asyncHandler(async (req, res) => {
     throw new Error("User not found.");
   }
 });
+
+exports.editRekomendasi = asyncHandler(async (req, res) => {
+  const {id} = req.params;
+  const {body} = req.body;
+
+  const findData = await DB.query("SELECT * FROM rekomendasi_mhs WHERE id = $1", [id]);
+
+  console.log(findData)
+
+  if(!findData.rows.length){
+    res.status(404);
+    throw new Error("Rekomendasi Not Found!")
+  }
+
+
+   await DB.query(
+    "UPDATE rekomendasi_mhs SET body = $1 WHERE id = $2",
+    [body, id]
+  );
+
+  res.status(201).json({
+    message: "Successfully update data.",
+  });
+
+})

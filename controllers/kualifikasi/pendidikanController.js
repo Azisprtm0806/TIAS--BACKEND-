@@ -139,13 +139,13 @@ exports.getDataPendidikan = asyncHandler(async (req, res) => {
   const userLoginId = req.user.user_id;
 
   const dataPend = await DB.query(
-    "SELECT * FROM tb_pend_formal WHERE user_id = $1 and status = $2",
-    [userLoginId, 1]
+    "SELECT * FROM tb_pend_formal WHERE user_id = $1 and status = $2 and is_deleted = $3",
+    [userLoginId, 1, false]
   );
 
   const jumlahData = await DB.query(
-    "SELECT COUNT(*) FROM tb_pend_formal WHERE user_id = $1 and status = $2",
-    [userLoginId, 1]
+    "SELECT COUNT(*) FROM tb_pend_formal WHERE user_id = $1 and status = $2 and is_deleted = $3",
+    [userLoginId, 1, false]
   );
 
   res.status(201).json({
@@ -331,10 +331,13 @@ exports.deleteDataPendidikan = asyncHandler(async (req, res) => {
     throw new Error("Data not found.");
   }
 
-  await fs.remove(path.join(`public/file-pendFormal/${findData.rows[0].file}`));
-  await DB.query("DELETE FROM tb_pend_formal WHERE pend_id = $1", [
-    findData.rows[0].pend_id,
-  ]);
+  const created_at = unixTimestamp;
+  const convert = convertDate(created_at);
+
+  await DB.query(
+    "UPDATE tb_pend_formal SET is_deleted = $1, deleted_at = $2 WHERE pend_id = $3",
+    [true, convert, findData.rows[0].pend_id]
+  );
 
   res.status(200).json({ message: "Data deleted successfully." });
 });
@@ -357,7 +360,7 @@ exports.editStatusPendidikan = asyncHandler(async (req, res) => {
     const updated_at = unixTimestamp;
     const convert = convertDate(updated_at);
     const updateStatus = await DB.query(
-      `UPDATE tb_pend_formal SET status = $1, updated_at = $2 WHERE pend_id = $2`,
+      `UPDATE tb_pend_formal SET status = $1, updated_at = $2 WHERE pend_id = $3`,
       [data.status, convert, pendId]
     );
 

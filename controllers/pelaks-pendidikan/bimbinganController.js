@@ -124,13 +124,13 @@ exports.getDataBimbingan = asyncHandler(async (req, res) => {
   const userLoginId = req.user.user_id;
 
   const findData = await DB.query(
-    "SELECT * FROM tb_bimbingan_mhs WHERE user_id = $1 and status = $2",
-    [userLoginId, 1]
+    "SELECT * FROM tb_bimbingan_mhs WHERE user_id = $1 and status = $2 and is_deleted",
+    [userLoginId, 1, false]
   );
 
   const jumlahData = await DB.query(
-    "SELECT COUNT(*) FROM tb_bimbingan_mhs WHERE user_id = $1 and status = $2",
-    [userLoginId, 1]
+    "SELECT COUNT(*) FROM tb_bimbingan_mhs WHERE user_id = $1 and status = $2 and is_deleted",
+    [userLoginId, 1, false]
   );
 
   res.status(201).json({
@@ -289,15 +289,13 @@ exports.deleteDataBimbingan = asyncHandler(async (req, res) => {
     throw new Error("Data not found.");
   }
 
-  await DB.query("DELETE FROM mhs_bimbingan WHERE bimbingan_id = $1", [
-    bimbinganId,
-  ]);
-  await DB.query("DELETE FROM dosen_pembimbing WHERE bimbingan_id = $1", [
-    bimbinganId,
-  ]);
-  await DB.query("DELETE FROM tb_bimbingan_mhs WHERE bimbingan_id = $1", [
-    bimbinganId,
-  ]);
+  const created_at = unixTimestamp;
+  const convert = convertDate(created_at);
+
+  await DB.query(
+    "UPDATE tb_bimbingan_mhs SET is_deleted = $1, deleted_at = $2 WHERE bimbingan_id = $1",
+    [true, convert, bimbinganId]
+  );
 
   res.status(200).json({ message: "Data deleted successfully." });
 });

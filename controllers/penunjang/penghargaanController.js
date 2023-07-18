@@ -75,13 +75,13 @@ exports.addPenghargaan = asyncHandler(async (req, res) => {
 exports.getPenghargaan = asyncHandler(async (req, res) => {
   const userLoginId = req.user.user_id;
 
-  const query = `SELECT tb_penghargaan.*, kategori_prestasi.nama_kategori, kategori_prestasi.juara, kategori_prestasi.point FROM tb_penghargaan JOIN kategori_prestasi ON tb_penghargaan.kategori_id=kategori_prestasi.id WHERE tb_penghargaan.user_id = '${userLoginId}' and status = 1`;
+  const query = `SELECT tb_penghargaan.*, kategori_prestasi.nama_kategori, kategori_prestasi.juara, kategori_prestasi.point FROM tb_penghargaan JOIN kategori_prestasi ON tb_penghargaan.kategori_id=kategori_prestasi.id WHERE tb_penghargaan.user_id = '${userLoginId}' and status = 1 and is_deleted = ${false}`;
 
   const dataPenghargaan = await DB.query(query);
 
   const jumlahData = await DB.query(
-    "SELECT COUNT(*) FROM tb_penghargaan WHERE user_id = $1 and status = $2",
-    [userLoginId, 1]
+    "SELECT COUNT(*) FROM tb_penghargaan WHERE user_id = $1 and status = $2 and is_deleted = $3",
+    [userLoginId, 1, false]
   );
 
   res.status(201).json({
@@ -184,12 +184,28 @@ exports.deletePenghargaan = asyncHandler(async (req, res) => {
     throw new Error("Data not found.");
   }
 
-  await fs.remove(
-    path.join(`public/file-penghargaan/${findData.rows[0].file}`)
+  const created_at = unixTimestamp;
+  const convert = convertDate(created_at);
+
+  const deleteData = await DB.query(
+    "UPDATE tb_penghargaan SET is_deleted = $1, deleted_at = $2 WHERE penghargaan_id = $3 returning *",
+    [true, convert, findData.rows[0].penghargaan_id]
   );
-  await DB.query("DELETE FROM tb_penghargaan WHERE penghargaan_id = $1", [
-    findData.rows[0].penghargaan_id,
-  ]);
+
+  if (deleteData.rows.length) {
+    const data = await DB.query(
+      "SELECT tb_penghargaan.*, kategori_prestasi.nama_kategori, kategori_prestasi.juara, kategori_prestasi.point FROM tb_penghargaan NATURAL JOIN kategori_prestasi WHERE id = $1",
+      [deleteData.rows[0].kategori_id]
+    );
+
+    const point = data.rows[0].point;
+    const userId = data.rows[0].user_id;
+
+    await DB.query(
+      "UPDATE tb_data_pribadi SET point_penunjang = point_penunjang - $1 WHERE user_id = $2",
+      [point, userId]
+    );
+  }
 
   res.status(200).json({ message: "Data deleted successfully." });
 });
@@ -226,7 +242,7 @@ exports.updateStatusPenghargaan = asyncHandler(async (req, res) => {
       const userId = data.rows[0].user_id;
 
       await DB.query(
-        "UPDATE tb_data_pribadi SET point_prestasi = point_prestasi + $1 WHERE user_id = $2",
+        "UPDATE tb_data_pribadi SET point_penunjang = point_penunjang + $1 WHERE user_id = $2",
         [point, userId]
       );
     }

@@ -18,6 +18,19 @@ exports.createDataPribadi = asyncHandler(async (req, res) => {
   const data = req.body;
 
   if (
+    data.point_sertifikasi ||
+    data.point_hki ||
+    data.point_rekomendasi ||
+    data.point_publikasi ||
+    data.prestasi ||
+    data.point_ipk ||
+    data.status_mhs
+  ) {
+    res.status(400);
+    throw new Error("Pleas fill in all the required fields.");
+  }
+
+  if (
     !data.nama_lengkap ||
     !data.jenkel ||
     !data.tanggal_lahir ||
@@ -88,6 +101,18 @@ exports.createDataPribadi = asyncHandler(async (req, res) => {
 
 exports.getDataPribadi = asyncHandler(async (req, res) => {
   const userLoginId = req.user.user_id;
+
+  const getTotalPoint = await DB.query(
+    "SELECT point_pendidikan + point_pengabdian + point_penelitian + point_kompetensi + point_penunjang + point_rekomendasi AS total_points FROM tb_data_pribadi WHERE user_id = $1",
+    [userLoginId]
+  );
+
+  const total_points = getTotalPoint.rows[0].total_points;
+
+  await DB.query(
+    "UPDATE tb_data_pribadi SET total_point = $1 WHERE user_id = $2",
+    [total_points, userLoginId]
+  );
 
   const dataPribadi = await DB.query(
     "SELECT * FROM tb_data_pribadi WHERE user_id = $1",

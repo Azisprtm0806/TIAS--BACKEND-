@@ -65,17 +65,18 @@ exports.addDataProfesi = asyncHandler(async (req, res) => {
     throw new Error("User not found.");
   }
 });
+
 exports.getAllDataProfesi = asyncHandler(async (req, res) => {
   const userLoginId = req.user.user_id;
 
   const dataProf = await DB.query(
-    "SELECT * FROM tb_anggota_prof WHERE user_id = $1 and status = $2",
-    [userLoginId, 1]
+    "SELECT * FROM tb_anggota_prof WHERE user_id = $1 and status = $2 and is_deleted = $3",
+    [userLoginId, 1, false]
   );
 
   const jumlahData = await DB.query(
-    "SELECT COUNT(*) FROM tb_anggota_prof WHERE user_id = $1 and status = $2",
-    [userLoginId, 1]
+    "SELECT COUNT(*) FROM tb_anggota_prof WHERE user_id = $1 and status = $2 and is_deleted = $3",
+    [userLoginId, 1, false]
   );
 
   res.status(201).json({
@@ -83,6 +84,7 @@ exports.getAllDataProfesi = asyncHandler(async (req, res) => {
     totalData: jumlahData.rows[0].count,
   });
 });
+
 exports.detailDataProfesi = asyncHandler(async (req, res) => {
   const { profId } = req.params;
 
@@ -100,6 +102,7 @@ exports.detailDataProfesi = asyncHandler(async (req, res) => {
     data: findData.rows[0],
   });
 });
+
 exports.editDataProfesi = asyncHandler(async (req, res) => {
   const { profId } = req.params;
 
@@ -161,6 +164,7 @@ exports.editDataProfesi = asyncHandler(async (req, res) => {
     throw new Error("Data not found.");
   }
 });
+
 exports.deleteDataProfesi = asyncHandler(async (req, res) => {
   const { profId } = req.params;
 
@@ -174,13 +178,17 @@ exports.deleteDataProfesi = asyncHandler(async (req, res) => {
     throw new Error("Data not found.");
   }
 
-  await fs.remove(path.join(`public/file-profesi/${findData.rows[0].file}`));
-  await DB.query("DELETE FROM tb_anggota_prof WHERE prof_id = $1", [
-    findData.rows[0].prof_id,
-  ]);
+  const created_at = unixTimestamp;
+  const convert = convertDate(created_at);
+
+  await DB.query(
+    "UPDATE tb_anggota_prof SET is_deleted = $1, deleted_at = $2 WHERE prof_id = $3",
+    [true, convert, findData.rows[0].prof_id]
+  );
 
   res.status(200).json({ message: "Data deleted successfully." });
 });
+
 exports.updateStatusProfesi = asyncHandler(async (req, res) => {
   const { profId } = req.params;
   const data = req.body;
@@ -199,7 +207,7 @@ exports.updateStatusProfesi = asyncHandler(async (req, res) => {
     const updated_at = unixTimestamp;
     const convert = convertDate(updated_at);
     const updateStatus = await DB.query(
-      `UPDATE tb_anggota_prof SET status = $1, updated_at = $2 WHERE prof_id = $2`,
+      `UPDATE tb_anggota_prof SET status = $1, updated_at = $2 WHERE prof_id = $3`,
       [data.status, convert, profId]
     );
 

@@ -113,17 +113,18 @@ exports.addRiwayatPekerjaan = asyncHandler(async (req, res) => {
     throw new Error("User not found.");
   }
 });
+
 exports.getDataRiwayatPekerjaan = asyncHandler(async (req, res) => {
   const userLoginId = req.user.user_id;
 
   const findData = await DB.query(
-    "SELECT * FROM tb_riwayat_pekerjaan WHERE user_id = $1 and status = $2",
-    [userLoginId, 1]
+    "SELECT * FROM tb_riwayat_pekerjaan WHERE user_id = $1 and status = $2 and is_deleted = $3",
+    [userLoginId, 1, false]
   );
 
   const jumlahData = await DB.query(
-    "SELECT COUNT(*) FROM tb_riwayat_pekerjaan WHERE user_id = $1 and status = $2",
-    [userLoginId, 1]
+    "SELECT COUNT(*) FROM tb_riwayat_pekerjaan WHERE user_id = $1 and status = $2 and is_deleted = $3",
+    [userLoginId, 1, false]
   );
 
   res.status(201).json({
@@ -131,6 +132,7 @@ exports.getDataRiwayatPekerjaan = asyncHandler(async (req, res) => {
     totalData: jumlahData.rows[0].count,
   });
 });
+
 exports.detailDataRiwayatPekerjaan = asyncHandler(async (req, res) => {
   const { rwytId } = req.params;
 
@@ -148,6 +150,7 @@ exports.detailDataRiwayatPekerjaan = asyncHandler(async (req, res) => {
     data: findData.rows[0],
   });
 });
+
 exports.editDataRiwayatPekerjaan = asyncHandler(async (req, res) => {
   const { rwytId } = req.params;
 
@@ -208,6 +211,7 @@ exports.editDataRiwayatPekerjaan = asyncHandler(async (req, res) => {
     throw new Error("Data not found.");
   }
 });
+
 exports.deleteDataRiwayatPekerjaan = asyncHandler(async (req, res) => {
   const { rwytId } = req.params;
 
@@ -221,16 +225,17 @@ exports.deleteDataRiwayatPekerjaan = asyncHandler(async (req, res) => {
     throw new Error("Data not found.");
   }
 
-  await fs.remove(
-    path.join(`public/file-riwayatPekerjaan/${findData.rows[0].file}`)
-  );
+  const created_at = unixTimestamp;
+  const convert = convertDate(created_at);
+
   await DB.query(
-    "DELETE FROM tb_riwayat_pekerjaan WHERE rwyt_pekerjaan_id = $1",
-    [findData.rows[0].rwyt_pekerjaan_id]
+    "UPDATE tb_riwayat_pekerjaan SET is_deleted = $1, deleted_at = $2 WHERE rwyt_pekerjaan_id = $3",
+    [true, convert, findData.rows[0].rwyt_pekerjaan_id]
   );
 
   res.status(200).json({ message: "Data deleted successfully." });
 });
+
 exports.editStatusRiwayatPekerjaan = asyncHandler(async (req, res) => {
   const { rwytId } = req.params;
   const data = req.body;
@@ -249,7 +254,7 @@ exports.editStatusRiwayatPekerjaan = asyncHandler(async (req, res) => {
     const updated_at = unixTimestamp;
     const convert = convertDate(updated_at);
     const updateStatus = await DB.query(
-      `UPDATE tb_riwayat_pekerjaan SET status = $1, updated_at = $2 WHERE rwyt_pekerjaan_id = $2`,
+      `UPDATE tb_riwayat_pekerjaan SET status = $1, updated_at = $2 WHERE rwyt_pekerjaan_id = $3`,
       [data.status, convert, rwytId]
     );
 

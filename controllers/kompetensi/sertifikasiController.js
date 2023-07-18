@@ -107,13 +107,13 @@ exports.createDataSerti = asyncHandler(async (req, res) => {
 exports.getDataSerti = asyncHandler(async (req, res) => {
   const userLoginId = req.user.user_id;
 
-  const query = `SELECT tb_sertifikasi.*, kategori_sertifikasi.nama_kategori, kategori_sertifikasi.point FROM tb_sertifikasi JOIN kategori_sertifikasi ON tb_sertifikasi.kategori_id=kategori_sertifikasi.id WHERE tb_sertifikasi.user_id = '${userLoginId}' and status = 1`;
+  const query = `SELECT tb_sertifikasi.*, kategori_sertifikasi.nama_kategori, kategori_sertifikasi.point FROM tb_sertifikasi JOIN kategori_sertifikasi ON tb_sertifikasi.kategori_id=kategori_sertifikasi.id WHERE tb_sertifikasi.user_id = '${userLoginId}' and status = 1 and is_deleted = ${false}`;
 
   const dataSerti = await DB.query(query);
 
   const jumlahData = await DB.query(
-    "SELECT COUNT(*) FROM tb_sertifikasi WHERE user_id = $1 and status = $2",
-    [userLoginId, 1]
+    "SELECT COUNT(*) FROM tb_sertifikasi WHERE user_id = $1 and status = $2 and is_deleted = $3",
+    [userLoginId, 1, false]
   );
 
   res.status(201).json({
@@ -257,12 +257,28 @@ exports.deleteDataSerti = asyncHandler(async (req, res) => {
     throw new Error("Data not found.");
   }
 
-  await fs.remove(
-    path.join(`public/file-sertifikasi/${findData.rows[0].file}`)
+  const created_at = unixTimestamp;
+  const convert = convertDate(created_at);
+
+  const deleteSerti = await DB.query(
+    "UPDATE tb_sertifikasi SET is_deleted = $1, deleted_at = $2 WHERE sertifikat_id = $3 returning *",
+    [true, convert, findData.rows[0].sertifikat_id]
   );
-  await DB.query("DELETE FROM tb_sertifikasi WHERE sertifikat_id = $1", [
-    findData.rows[0].sertifikat_id,
-  ]);
+
+  if (deleteSerti.rows.length) {
+    const data = await DB.query(
+      "SELECT tb_sertifikasi.*, kategori_sertifikasi.nama_kategori, kategori_sertifikasi.point FROM tb_sertifikasi NATURAL JOIN kategori_sertifikasi WHERE id = $1",
+      [deleteSerti.rows[0].kategori_id]
+    );
+
+    const point = data.rows[0].point;
+    const userId = data.rows[0].user_id;
+
+    await DB.query(
+      "UPDATE tb_data_pribadi SET point_kompetensi = point_kompetensi - $1 WHERE user_id = $2",
+      [point, userId]
+    );
+  }
 
   res.status(200).json({ message: "Data deleted successfully." });
 });
@@ -299,7 +315,7 @@ exports.editStatusSerti = asyncHandler(async (req, res) => {
       const userId = data.rows[0].user_id;
 
       await DB.query(
-        "UPDATE tb_data_pribadi SET point_sertifikasi = point_sertifikasi + $1 WHERE user_id = $2",
+        "UPDATE tb_data_pribadi SET point_kompetensi = point_kompetensi + $1 WHERE user_id = $2",
         [point, userId]
       );
     }

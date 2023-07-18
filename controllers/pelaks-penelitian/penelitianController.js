@@ -168,13 +168,13 @@ exports.getDataPenelitian = asyncHandler(async (req, res) => {
   const userLoginId = req.user.user_id;
 
   const dataPenelitian = await DB.query(
-    "SELECT * FROM tb_penelitian WHERE user_id = $1 and status = $2",
-    [userLoginId, 1]
+    "SELECT * FROM tb_penelitian WHERE user_id = $1 and status = $2 and is_deleted = $3",
+    [userLoginId, 1, false]
   );
 
   const jumlahData = await DB.query(
-    "SELECT COUNT(*) FROM tb_penelitian WHERE user_id = $1 and status = $2",
-    [userLoginId, 1]
+    "SELECT COUNT(*) FROM tb_penelitian WHERE user_id = $1 and status = $2 and is_deleted = $3",
+    [userLoginId, 1, false]
   );
 
   res.status(201).json({
@@ -302,6 +302,18 @@ exports.editDataPenelitian = asyncHandler(async (req, res) => {
         res.status(400);
         throw new Error("Please fill in one file.");
       }
+
+      if (!data.nama_dok || !data.keterangan) {
+        fs.unlink(file.path, (err) => {
+          if (err) {
+            console.log(err);
+          }
+          return;
+        });
+        res.status(400);
+        throw new Error("Pleas fill in all the required dokumen fields.");
+      }
+
       function filterData(data) {
         const result = {};
 
@@ -373,25 +385,13 @@ exports.deleteDataPenelitian = asyncHandler(async (req, res) => {
     throw new Error("Data not found.");
   }
 
-  const findDokumen = await DB.query(
-    "SELECT * FROM dokumen_penelitian WHERE penelitian_id = $1",
-    [penelitianId]
+  const created_at = unixTimestamp;
+  const convert = convertDate(created_at);
+
+  await DB.query(
+    "UPDATE tb_penelitian SET is_deleted = $1, deleted_at = $2 WHERE penelitian_id = $3",
+    [true, convert, penelitianId]
   );
-
-  const dataDokumen = findDokumen.rows;
-  dataDokumen.forEach(async (dok) => {
-    await fs.remove(path.join(`public/dokumen-penelitian/${dok.file}`));
-  });
-
-  await DB.query("DELETE FROM anggota_penelitian WHERE penelitian_id = $1", [
-    penelitianId,
-  ]);
-  await DB.query("DELETE FROM dokumen_penelitian WHERE penelitian_id = $1", [
-    penelitianId,
-  ]);
-  await DB.query("DELETE FROM tb_penelitian WHERE penelitian_id = $1", [
-    penelitianId,
-  ]);
 
   res.status(200).json({ message: "Data deleted successfully." });
 });
@@ -451,7 +451,7 @@ exports.addDokumenPenelitian = asyncHandler(async (req, res) => {
       return;
     });
     res.status(404);
-    throw new Error("Data Pembicara not found.");
+    throw new Error("Data penelitian not found.");
   }
 
   if (!data.nama_dok || !data.keterangan) {
@@ -578,7 +578,7 @@ exports.editDokumenPenelitian = asyncHandler(async (req, res) => {
         .join(", ");
 
       const saveData = await DB.query(
-        `UPDATE dokumen_penelitian SET ${setQuery} WHERE penelitian_id = '${findData.rows[0].penelitian_id}' `,
+        `UPDATE dokumen_penelitian SET ${setQuery} WHERE dokumen_id = '${findData.rows[0].dokumen_id}' `,
         entries.map(([_, value]) => value)
       );
 

@@ -126,13 +126,13 @@ exports.getDataPembicara = asyncHandler(async (req, res) => {
   const userLoginId = req.user.user_id;
 
   const findData = await DB.query(
-    "SELECT * FROM tb_pembicara WHERE user_id = $1 and status = $2",
-    [userLoginId, 1]
+    "SELECT * FROM tb_pembicara WHERE user_id = $1 and status = $2 and is_deleted = $3",
+    [userLoginId, 1, false]
   );
 
   const jumlahData = await DB.query(
-    "SELECT COUNT(*) FROM tb_pengabdian WHERE user_id = $1 and status = $2",
-    [userLoginId, 1]
+    "SELECT COUNT(*) FROM tb_pembicara WHERE user_id = $1 and status = $2 and is_deleted = $3",
+    [userLoginId, 1, false]
   );
 
   res.status(201).json({
@@ -156,8 +156,10 @@ exports.detailDataPembicara = asyncHandler(async (req, res) => {
     );
 
     res.status(201).json({
-      dataPembicara: findDataPembicara.rows,
-      dataDokumen: findDataDokumen.rows,
+      data: {
+        dataPembicara: findDataPembicara.rows,
+        dataDokumen: findDataDokumen.rows,
+      },
     });
   } else {
     res.status(404);
@@ -178,22 +180,13 @@ exports.deleteDataPembicara = asyncHandler(async (req, res) => {
     throw new Error("Data not found.");
   }
 
-  const findDokumen = await DB.query(
-    "SELECT * FROM dokumen_pembicara WHERE pembicara_id = $1",
-    [pembicaraId]
+  const created_at = unixTimestamp;
+  const convert = convertDate(created_at);
+
+  await DB.query(
+    "UPDATE tb_pembicara SET is_deleted = $1, deleted_at = $2 WHERE pembicara_id = $3",
+    [true, convert, pembicaraId]
   );
-
-  const dataDokumen = findDokumen.rows;
-  dataDokumen.forEach(async (dok) => {
-    await fs.remove(path.join(`public/dokumen-pembicara/${dok.file}`));
-  });
-
-  await DB.query("DELETE FROM dokumen_pembicara WHERE pembicara_id = $1", [
-    pembicaraId,
-  ]);
-  await DB.query("DELETE FROM tb_pembicara WHERE pembicara_id = $1", [
-    pembicaraId,
-  ]);
 
   res.status(200).json({ message: "Data deleted successfully." });
 });
