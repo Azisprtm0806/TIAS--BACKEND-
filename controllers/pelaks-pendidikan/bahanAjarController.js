@@ -184,9 +184,11 @@ exports.detailDataBahanAjar = asyncHandler(async (req, res) => {
   );
 
   res.status(201).json({
-    data: findData.rows,
-    penulis: anggotaPenelitian.rows,
-    dataDokumen: findDataDokumen.rows,
+    data: {
+      data: findData.rows,
+      penulis: anggotaPenelitian.rows,
+      dataDokumen: findDataDokumen.rows,
+    },
   });
 });
 
@@ -517,7 +519,6 @@ exports.deleteDokumenBahanAjar = asyncHandler(async (req, res) => {
 });
 
 exports.editDokumenBahanAjar = asyncHandler(async (req, res) => {
-
   const { dokumenId } = req.params;
   const file = req.file;
   const data = req.body;

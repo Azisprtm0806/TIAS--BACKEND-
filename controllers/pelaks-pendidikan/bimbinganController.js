@@ -158,9 +158,11 @@ exports.detailDataBimbingan = asyncHandler(async (req, res) => {
   );
 
   res.status(201).json({
-    dataBimbingan: findData.rows,
-    dosenPembimbing: dosenPembimbing.rows,
-    mhsBimbingan: mhsBimbingan.rows,
+    data: {
+      dataBimbingan: findData.rows,
+      dosenPembimbing: dosenPembimbing.rows,
+      mhsBimbingan: mhsBimbingan.rows,
+    },
   });
 });
 

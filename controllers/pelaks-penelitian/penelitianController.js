@@ -202,9 +202,11 @@ exports.detailDataPenelitian = asyncHandler(async (req, res) => {
   );
 
   res.status(201).json({
-    dataPenelitian: findDataPenelitian.rows,
-    anggotaPenelitian: anggotaPenelitian.rows,
-    dataDokumen: findDataDokumen.rows,
+    data: {
+      dataPenelitian: findDataPenelitian.rows,
+      anggotaPenelitian: anggotaPenelitian.rows,
+      dataDokumen: findDataDokumen.rows,
+    },
   });
 });
 

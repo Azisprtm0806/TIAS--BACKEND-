@@ -156,7 +156,7 @@ exports.getDataPublikasi = asyncHandler(async (req, res) => {
 
   res.status(201).json({
     data: dataPublikasi.rows,
-    jumlahData: jumlahData.rows[0].count,
+    totalData: jumlahData.rows[0].count,
   });
 });
 
@@ -179,9 +179,11 @@ exports.detailDataPublikasi = asyncHandler(async (req, res) => {
   );
 
   res.status(201).json({
-    dataPublikasi: findDataPublikasi.rows,
-    dataPenulis: penulis.rows,
-    dataDokumen: findDataDokumen.rows,
+    data: {
+      dataPublikasi: findDataPublikasi.rows,
+      dataPenulis: penulis.rows,
+      dataDokumen: findDataDokumen.rows,
+    },
   });
 });
 

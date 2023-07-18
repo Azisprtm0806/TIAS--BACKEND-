@@ -164,9 +164,11 @@ exports.detailDataHki = asyncHandler(async (req, res) => {
     );
 
     res.status(201).json({
-      dataHki: findDataHki.rows,
-      dataPenulis: penulis.rows,
-      dataDokumen: findDataDokumen.rows,
+      data: {
+        dataHki: findDataHki.rows,
+        dataPenulis: penulis.rows,
+        dataDokumen: findDataDokumen.rows,
+      },
     });
   } else {
     res.status(404).json({
