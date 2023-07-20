@@ -11,6 +11,7 @@ const {
   deleteDokumenPublikasi,
   editDokumenPublikasi,
   updateStatusPublikasi,
+  filterDataPublikasi,
 } = require("../../controllers/pelaks-penelitian/publikasiKaryaController");
 const {
   publikasiKaryaUpload,
@@ -35,6 +36,7 @@ router.patch(
   adminOnly,
   updateStatusPublikasi
 );
+router.get("/filter", protected, filterDataPublikasi);
 // ============= END PENELITIAN =====================
 
 // ============= DOKUMEN PUBLIKASI ==============

@@ -145,13 +145,13 @@ exports.addDataPublikasi = asyncHandler(async (req, res) => {
 exports.getDataPublikasi = asyncHandler(async (req, res) => {
   const userLoginId = req.user.user_id;
 
-  const query = `SELECT tb_publikasi_karya.*, kategori_publikasi.nama_kategori, kategori_publikasi.tingkatan, kategori_publikasi.point FROM tb_publikasi_karya JOIN kategori_publikasi ON tb_publikasi_karya.kategori_id=kategori_publikasi.id WHERE tb_publikasi_karya.user_id = '${userLoginId}' and status = 1`;
+  const query = `SELECT tb_publikasi_karya.*, kategori_publikasi.nama_kategori, kategori_publikasi.tingkatan, kategori_publikasi.point FROM tb_publikasi_karya JOIN kategori_publikasi ON tb_publikasi_karya.kategori_id=kategori_publikasi.id WHERE tb_publikasi_karya.user_id = '${userLoginId}' and status = 1 and is_deleted = ${false}`;
 
   const dataPublikasi = await DB.query(query);
 
   const jumlahData = await DB.query(
-    "SELECT COUNT(*) FROM tb_publikasi_karya WHERE user_id = $1 and status = $2",
-    [userLoginId, 1]
+    "SELECT COUNT(*) FROM tb_publikasi_karya WHERE user_id = $1 and status = $2 and is_deleted = $3",
+    [userLoginId, 1, false]
   );
 
   res.status(201).json({
@@ -434,6 +434,24 @@ exports.updateStatusPublikasi = asyncHandler(async (req, res) => {
   }
 });
 
+exports.filterDataPublikasi = asyncHandler(async (req, res) => {
+  const userLoginId = req.user.user_id;
+  const data = req.body;
+
+  const judul_artikel = data.judul_artikel || null;
+  const jenis = data.jenis || null;
+  const tgl_terbit_start = data.tgl_terbit_start || null;
+  const tgl_terbit_end = data.tgl_terbit_end || null;
+
+  const findData = await DB.query(
+    `SELECT * FROM filter_data_publikasi($1, $2, $3, $4, $5)`,
+    [judul_artikel, jenis, tgl_terbit_start, tgl_terbit_end, userLoginId]
+  );
+
+  res.status(201).json({
+    data: findData.rows,
+  });
+});
 // ====================  END PUBLIKASI KARYA ==========================
 exports.addDokumenPublikasi = asyncHandler(async (req, res) => {
   const data = req.body;

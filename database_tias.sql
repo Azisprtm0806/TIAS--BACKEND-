@@ -557,7 +557,11 @@ CREATE TABLE penulis_bahan_ajar (
 -- =======================================================
 -- 									KATEGORI KEGIATAN
 -- =======================================================
-
+CREATE TABLE kategori_mhs(
+	id uuid DEFAULT uuid_generate_v4() PRIMARY KEY NOT NULL,
+	kode INT NOT NULL, 
+	status_mhs varchar(120) NOT NULL,
+)
 
 -- DONE
 CREATE TABLE kategori_hki (

@@ -130,13 +130,13 @@ exports.addDataHki = asyncHandler(async (req, res) => {
 exports.getDataHki = asyncHandler(async (req, res) => {
   const userLoginId = req.user.user_id;
 
-  const query = `SELECT tb_hki.*, kategori_hki.nama_kategori, kategori_hki.point FROM tb_hki JOIN kategori_hki ON tb_hki.kategori_id=kategori_hki.id WHERE tb_hki.user_id = '${userLoginId}' and status = 1`;
+  const query = `SELECT tb_hki.*, kategori_hki.nama_kategori, kategori_hki.point FROM tb_hki JOIN kategori_hki ON tb_hki.kategori_id=kategori_hki.id WHERE tb_hki.user_id = '${userLoginId}' and status = 1 and is_deleted = ${false}`;
 
   const dataHki = await DB.query(query);
 
   const jumlahData = await DB.query(
-    "SELECT COUNT(*) FROM tb_hki WHERE user_id = $1 and status = $2",
-    [userLoginId, 1]
+    "SELECT COUNT(*) FROM tb_hki WHERE user_id = $1 and status = $2 and is_deleted = $3",
+    [userLoginId, 1, false]
   );
 
   res.status(201).json({
@@ -148,9 +148,9 @@ exports.getDataHki = asyncHandler(async (req, res) => {
 exports.detailDataHki = asyncHandler(async (req, res) => {
   const { hkiId } = req.params;
 
-  const findDataHki = await DB.query("SELECT * FROM tb_hki WHERE hki_id = $1", [
-    hkiId,
-  ]);
+  const query = `SELECT tb_hki.*, kategori_hki.nama_kategori, kategori_hki.point FROM tb_hki JOIN kategori_hki ON tb_hki.kategori_id=kategori_hki.id WHERE tb_hki.hki_id = '${hkiId}'`;
+
+  const findDataHki = await DB.query(query);
 
   if (findDataHki.rows.length) {
     const penulis = await DB.query(

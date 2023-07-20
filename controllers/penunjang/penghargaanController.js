@@ -93,10 +93,9 @@ exports.getPenghargaan = asyncHandler(async (req, res) => {
 exports.detailPenghargaan = asyncHandler(async (req, res) => {
   const { pengId } = req.params;
 
-  const findData = await DB.query(
-    "SELECT * FROM tb_penghargaan WHERE penghargaan_id = $1",
-    [pengId]
-  );
+  const query = `SELECT tb_penghargaan.*, kategori_prestasi.nama_kategori, kategori_prestasi.juara, kategori_prestasi.point FROM tb_penghargaan JOIN kategori_prestasi ON tb_penghargaan.kategori_id=kategori_prestasi.id WHERE tb_penghargaan.penghargaan_id = '${pengId}'`;
+
+  const findData = await DB.query(query);
 
   if (!findData.rows.length) {
     res.status(404);

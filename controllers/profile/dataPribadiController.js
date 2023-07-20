@@ -1,6 +1,8 @@
 const asyncHandler = require("express-async-handler");
 const DB = require("../../database");
 const { unixTimestamp, convertDate } = require("../../utils");
+const fs = require("fs-extra");
+const path = require("path");
 
 exports.createDataPribadi = asyncHandler(async (req, res) => {
   const userLoginId = req.user.user_id;
@@ -23,8 +25,7 @@ exports.createDataPribadi = asyncHandler(async (req, res) => {
     data.point_rekomendasi ||
     data.point_publikasi ||
     data.prestasi ||
-    data.point_ipk ||
-    data.status_mhs
+    data.point_ipk
   ) {
     res.status(400);
     throw new Error("Pleas fill in all the required fields.");
@@ -74,11 +75,20 @@ exports.createDataPribadi = asyncHandler(async (req, res) => {
     throw new Error("Invalid phone number.");
   }
 
+  const findUser = await DB.query("SELECT * FROM tb_users WHERE user_id = $1", [
+    userLoginId,
+  ]);
+
+  let kode_mhs;
+  if (findUser.rows[0].role == "Mahasiswa") {
+    kode_mhs = 0;
+  }
+
   const created_at = unixTimestamp;
   const convert = convertDate(created_at);
 
-  const keys = ["user_id", ...Object.keys(data), "created_at"];
-  const values = [userLoginId, ...Object.values(data), convert];
+  const keys = ["user_id", ...Object.keys(data), "created_at", "kode_mhs"];
+  const values = [userLoginId, ...Object.values(data), convert, kode_mhs];
   const placeholders = keys.map((key, index) => `$${index + 1}`);
 
   const saveData = await DB.query(
@@ -114,14 +124,24 @@ exports.getDataPribadi = asyncHandler(async (req, res) => {
     [total_points, userLoginId]
   );
 
-  const dataPribadi = await DB.query(
+  const cekKode = await DB.query(
     "SELECT * FROM tb_data_pribadi WHERE user_id = $1",
     [userLoginId]
   );
 
-  res.status(201).json({
-    data: dataPribadi.rows[0],
-  });
+  if (cekKode.rows[0].kode_mhs === null) {
+    res.status(201).json({
+      data: cekKode.rows[0],
+    });
+  } else {
+    const query = `SELECT tb_data_pribadi.*, kategori_mhs.status_mhs FROM tb_data_pribadi JOIN kategori_mhs ON tb_data_pribadi.kode_mhs = kategori_mhs.kode WHERE tb_data_pribadi.user_id = '${userLoginId}'`;
+
+    const dataPribadi = await DB.query(query);
+
+    res.status(201).json({
+      data: dataPribadi.rows[0],
+    });
+  }
 });
 
 exports.editDataPribadi = asyncHandler(async (req, res) => {
@@ -202,4 +222,40 @@ exports.updateStatusMhs = asyncHandler(async (req, res) => {
     res.status(404);
     throw new Error("Data not found.");
   }
+});
+
+exports.updateProfileImage = asyncHandler(async (req, res) => {
+  const userLoginId = req.user.user_id;
+  const file = req.file;
+
+  if (!file) {
+    res.status(400);
+    throw new Error("Please fill in one file.");
+  }
+
+  const findData = await DB.query(
+    "SELECT * FROM tb_data_pribadi WHERE user_id = $1",
+    [userLoginId]
+  );
+
+  if (!findData.rows.length) {
+    res.status(400);
+    throw new Error("Data not found.");
+  }
+
+  const removeImage = await fs.remove(
+    path.join(`public/foto-profile/${findData.rows[0].image}`)
+  );
+  console.log(removeImage);
+  const updated_at = unixTimestamp;
+  const convert = convertDate(updated_at);
+
+  await DB.query(
+    `UPDATE tb_data_pribadi SET image = $1, updated_at = $2 WHERE user_id = $3 `,
+    [file.filename, convert, userLoginId]
+  );
+
+  res.status(201).json({
+    message: "Successfully update data.",
+  });
 });

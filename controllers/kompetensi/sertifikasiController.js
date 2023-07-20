@@ -125,10 +125,9 @@ exports.getDataSerti = asyncHandler(async (req, res) => {
 exports.detailDataSerti = asyncHandler(async (req, res) => {
   const { certifId } = req.params;
 
-  const findData = await DB.query(
-    "SELECT * FROM tb_sertifikasi WHERE sertifikat_id = $1",
-    [certifId]
-  );
+  const query = `SELECT tb_sertifikasi.*, kategori_sertifikasi.nama_kategori, kategori_sertifikasi.point FROM tb_sertifikasi JOIN kategori_sertifikasi ON tb_sertifikasi.kategori_id=kategori_sertifikasi.id WHERE tb_sertifikasi.sertifikat_id = '${certifId}'`;
+
+  const findData = await DB.query(query);
 
   if (!findData.rows.length) {
     res.status(404);
@@ -328,4 +327,24 @@ exports.editStatusSerti = asyncHandler(async (req, res) => {
     res.status(404);
     throw new Error("Data not found.");
   }
+});
+
+exports.filterDataSertifikasi = asyncHandler(async (req, res) => {
+  const userLoginId = req.user.user_id;
+  const data = req.body;
+
+  const nomor_sk = data.nomor_sk || null;
+  const nama_serti = data.nama_serti || null;
+  const jenis_serti = data.jenis_serti || null;
+  const bidang_studi = data.bidang_studi || null;
+  const tgl_serti = data.tgl_serti || null;
+
+  const findData = await DB.query(
+    `SELECT * FROM filter_data_sertifikasi($1, $2, $3, $4, $5, $6)`,
+    [nomor_sk, nama_serti, jenis_serti, bidang_studi, tgl_serti, userLoginId]
+  );
+
+  res.status(201).json({
+    data: findData.rows,
+  });
 });

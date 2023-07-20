@@ -8,6 +8,7 @@ const {
   editDataSerti,
   deleteDataSerti,
   editStatusSerti,
+  filterDataSertifikasi,
 } = require("../../controllers/kompetensi/sertifikasiController");
 const {
   createDataTes,
@@ -36,6 +37,7 @@ router.patch(
   adminOnly,
   editStatusSerti
 );
+router.get("/filterCertif", protected, filterDataSertifikasi);
 // ============= END SERTIFIKAT ==================
 
 // ================== TES ======================

@@ -22,6 +22,7 @@ exports.addDataPengabdian = asyncHandler(async (req, res) => {
     }
 
     if (
+      !data.kategori_id ||
       !data.judul_kegiatan ||
       !data.lokasi_kegiatan ||
       !data.lama_kegiatan ||
@@ -40,6 +41,7 @@ exports.addDataPengabdian = asyncHandler(async (req, res) => {
     }
     // ==============PENGABDIAN===================
     const dataPengabdian = {
+      kategori_id: data.kategori_id,
       judul_kegiatan: data.judul_kegiatan,
       kelompok_bidang: data.kelompok_bidang,
       lokasi_kegiatan: data.lokasi_kegiatan,
@@ -144,10 +146,9 @@ exports.addDataPengabdian = asyncHandler(async (req, res) => {
 exports.getDataPengabdian = asyncHandler(async (req, res) => {
   const userLoginId = req.user.user_id;
 
-  const dataPengabdian = await DB.query(
-    "SELECT * FROM tb_pengabdian WHERE user_id = $1 and status = $2 and is_deleted = $3",
-    [userLoginId, 1, false]
-  );
+  const query = `SELECT tb_pengabdian.*, kategori_publikasi.nama_kategori, kategori_publikasi.tingkatan, kategori_publikasi.point FROM tb_pengabdian JOIN kategori_publikasi ON tb_pengabdian.kategori_id=kategori_publikasi.id WHERE tb_pengabdian.user_id = '${userLoginId}' and status = 1 and is_deleted = ${false}`;
+
+  const dataPengabdian = await DB.query(query);
 
   const jumlahData = await DB.query(
     "SELECT COUNT(*) FROM tb_pengabdian WHERE user_id = $1 and status = $2 and is_deleted = $3",
@@ -346,10 +347,25 @@ exports.deleteDataPengabdian = asyncHandler(async (req, res) => {
   const created_at = unixTimestamp;
   const convert = convertDate(created_at);
 
-  await DB.query(
+  const deleteData = await DB.query(
     "UPDATE tb_pengabdian SET is_deleted = $1, deleted_at = $2 WHERE pengabdian_id = $3",
     [true, convert, pengabdianId]
   );
+
+  if (deleteData.rows.length) {
+    const data = await DB.query(
+      "SELECT tb_pengabdian.*, kategori_publikasi.nama_kategori, kategori_publikasi.tingkatan, kategori_publikasi.point FROM tb_pengabdian NATURAL JOIN kategori_publikasi WHERE id = $1",
+      [deleteData.rows[0].kategori_id]
+    );
+
+    const point = data.rows[0].point;
+    const userId = data.rows[0].user_id;
+
+    await DB.query(
+      "UPDATE tb_data_pribadi SET point_pengabdian = point_pengabdian - $1 WHERE user_id = $2",
+      [point, userId]
+    );
+  }
 
   res.status(200).json({ message: "Data deleted successfully." });
 });
@@ -375,6 +391,21 @@ exports.updateStatusPengabdian = asyncHandler(async (req, res) => {
       `UPDATE tb_pengabdian SET status = $1, updated_at = $2 WHERE pengabdian_id = $3`,
       [data.status, convert, pengabdianId]
     );
+
+    if (updateStatus.rows[0].status === 1) {
+      const data = await DB.query(
+        "SELECT tb_pengabdian.*, kategori_publikasi.nama_kategori, kategori_publikasi.tingkatan, kategori_publikasi.point FROM tb_pengabdian NATURAL JOIN kategori_publikasi WHERE id = $1",
+        [updateStatus.rows[0].kategori_id]
+      );
+
+      const point = data.rows[0].point;
+      const userId = data.rows[0].user_id;
+
+      await DB.query(
+        "UPDATE tb_data_pribadi SET point_pengabdian = point_pengabdian + $1 WHERE user_id = $2",
+        [point, userId]
+      );
+    }
 
     res.status(201).json({
       message: "Successfully update data.",

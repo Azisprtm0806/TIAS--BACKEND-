@@ -1,5 +1,9 @@
 const express = require("express");
-const { protected, adminOnly } = require("../../middleware/authMiddleware");
+const {
+  protected,
+  adminOnly,
+  dosenOnly,
+} = require("../../middleware/authMiddleware");
 const {
   addDataPenelitian,
   addDokumenPenelitian,
@@ -11,6 +15,7 @@ const {
   deleteDataPenelitian,
   editDataPenelitian,
   updateStatusPenelitian,
+  filterDataPenelitian,
 } = require("../../controllers/pelaks-penelitian/penelitianController");
 const {
   dokumenPenelitianUpload,
@@ -44,6 +49,7 @@ router.patch(
   adminOnly,
   updateStatusPenelitian
 );
+router.get("/filter", protected, filterDataPenelitian);
 // ============= END PENELITIAN =====================
 
 // ============= DOKUMEN PENELITIAN ==============

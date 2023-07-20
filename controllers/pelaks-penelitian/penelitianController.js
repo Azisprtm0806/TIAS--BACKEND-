@@ -429,6 +429,24 @@ exports.updateStatusPenelitian = asyncHandler(async (req, res) => {
     throw new Error("Data not found.");
   }
 });
+
+exports.filterDataPenelitian = asyncHandler(async (req, res) => {
+  const userLoginId = req.user.user_id;
+  const data = req.body;
+
+  const judul_kegiatan = data.judul_kegiatan || null;
+  const tahun_pelaksanaan = data.tahun_pelaksanaan || null;
+  const lama_kegiatan = data.lama_kegiatan || null;
+
+  const findData = await DB.query(
+    `SELECT * FROM filter_data_penelitian($1, $2, $3, $4)`,
+    [judul_kegiatan, tahun_pelaksanaan, lama_kegiatan, userLoginId]
+  );
+
+  res.status(201).json({
+    data: findData.rows,
+  });
+});
 // ===================== END PENELITIAN ==========================
 
 // ===================== DOKUMEN PENELITIAN =====================
