@@ -413,6 +413,24 @@ exports.updateStatusHki = asyncHandler(async (req, res) => {
     throw new Error("Data not found.");
   }
 });
+
+exports.filterDataHki = asyncHandler(async (req, res) => {
+  const userLoginId = req.user.user_id;
+  const data = req.body;
+
+  const judul_hki = data.judul_hki || null;
+  const jenis_hki = data.jenis_hki || null;
+  const tgl_terbit_hki = data.tgl_terbit_hki || null;
+
+  const findData = await DB.query(
+    `SELECT * FROM filter_data_hki($1, $2, $3, $4)`,
+    [judul_hki, jenis_hki, tgl_terbit_hki, userLoginId]
+  );
+
+  res.status(201).json({
+    data: findData.rows,
+  });
+});
 // ====================  HKI ==========================
 
 // ==================== DOCUMENT HKI ======================

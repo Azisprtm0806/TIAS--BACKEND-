@@ -48,8 +48,7 @@ exports.createDataPribadi = asyncHandler(async (req, res) => {
     !data.kota_kabupaten ||
     !data.provinsi ||
     !data.kode_pos ||
-    !data.no_hp ||
-    !data.status_kawin
+    !data.no_hp
   ) {
     res.status(400);
     throw new Error("Pleas fill in all the required fields.");
@@ -134,7 +133,7 @@ exports.getDataPribadi = asyncHandler(async (req, res) => {
       data: cekKode.rows[0],
     });
   } else {
-    const query = `SELECT tb_data_pribadi.*, kategori_mhs.status_mhs FROM tb_data_pribadi JOIN kategori_mhs ON tb_data_pribadi.kode_mhs = kategori_mhs.kode WHERE tb_data_pribadi.user_id = '${userLoginId}'`;
+    const query = `SELECT tb_data_pribadi.*, kategori_mhs.status_mhs, tb_users.npm, tb_users.nidn, tb_users.role FROM tb_data_pribadi JOIN kategori_mhs ON tb_data_pribadi.kode_mhs = kategori_mhs.kode JOIN tb_users ON tb_data_pribadi.user_id = tb_users.user_id WHERE tb_data_pribadi.user_id = '${userLoginId}'`;
 
     const dataPribadi = await DB.query(query);
 
@@ -246,7 +245,6 @@ exports.updateProfileImage = asyncHandler(async (req, res) => {
   const removeImage = await fs.remove(
     path.join(`public/foto-profile/${findData.rows[0].image}`)
   );
-  console.log(removeImage);
   const updated_at = unixTimestamp;
   const convert = convertDate(updated_at);
 

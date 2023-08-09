@@ -8,6 +8,7 @@ const {
   editDataRiwayatPekerjaan,
   deleteDataRiwayatPekerjaan,
   editStatusRiwayatPekerjaan,
+  filterDataRiwayatPekerjaan,
 } = require("../../controllers/kualifikasi/riwayatPekerjaanController");
 const {
   detailDataPendidikan,
@@ -16,6 +17,7 @@ const {
   addPendidikan,
   getDataPendidikan,
   editStatusPendidikan,
+  filterDataPendidikan,
 } = require("../../controllers/kualifikasi/pendidikanController");
 const router = express.Router();
 
@@ -49,6 +51,7 @@ router.patch(
   adminOnly,
   editStatusRiwayatPekerjaan
 );
+router.get("/filterRiwayatPekerjaan", protected, filterDataRiwayatPekerjaan);
 // ============= END RIWAYAT PEKERJAAN ==================
 
 // ================== PENDIDIKAN FORMAL ======================
@@ -68,6 +71,7 @@ router.patch(
   adminOnly,
   editStatusPendidikan
 );
+router.get("/filterPend", protected, filterDataPendidikan);
 // ================== END PENDIDIKAN FORMAL ==================
 
 module.exports = router;

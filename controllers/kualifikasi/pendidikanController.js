@@ -373,3 +373,21 @@ exports.editStatusPendidikan = asyncHandler(async (req, res) => {
     throw new Error("Data not found.");
   }
 });
+
+exports.filterDataPendidikan = asyncHandler(async (req, res) => {
+  const userLoginId = req.user.user_id;
+  const data = req.body;
+
+  const jenjang_studi = data.jenjang_studi || null;
+  const asal = data.asal || null;
+  const tahun_lulus = data.tahun_lulus || null;
+
+  const findData = await DB.query(
+    `SELECT * FROM filter_data_pend_formal($1, $2, $3, $4)`,
+    [jenjang_studi, asal, tahun_lulus, userLoginId]
+  );
+
+  res.status(201).json({
+    data: findData.rows,
+  });
+});

@@ -11,6 +11,7 @@ const {
   deleteDokumenPembicara,
   editDokumenPembicara,
   updateStatusPembicara,
+  filterDataPembicara,
 } = require("../../controllers/pelaks-pengabdian/pembicaraController");
 const {
   dokumenPembicaraUpload,
@@ -40,7 +41,7 @@ router.patch(
   adminOnly,
   updateStatusPembicara
 );
-
+router.get("/filterPembicara", protected, filterDataPembicara);
 // ============= END PENELITIAN =====================
 
 // ============= DOKUMEN PEMBICARA ==============

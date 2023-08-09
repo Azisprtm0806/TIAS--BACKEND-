@@ -19,6 +19,7 @@ const crypto = require("crypto");
 const jwt = require("jsonwebtoken");
 // Triger 2FA
 const Cryptr = require("cryptr");
+const sendEmail = require("../../utils/sendMail");
 const cryptr = new Cryptr(process.env.CRYPTR_KEY);
 
 exports.register = asyncHandler(async (req, res) => {
@@ -79,7 +80,7 @@ exports.register = asyncHandler(async (req, res) => {
       // Create verification token
       const verificationToken =
         crypto.randomBytes(32).toString("hex") + user_id;
-      console.log(verificationToken);
+      console.log("verif token :", verificationToken);
       const hashedToken = hashToken(verificationToken);
 
       const unix = unixTimestamp;
@@ -105,15 +106,6 @@ exports.register = asyncHandler(async (req, res) => {
 
       await sendMail(subject, send_to, send_from, template, name, link);
 
-      // Send HTTP-only Cookie
-      // res.cookie("token", token, {
-      //   path: "/",
-      //   httpOnly: true,
-      //   expires: new Date(Date.now() + 1000 * 86400), // 1 day
-      //   sameSite: "none",
-      //   secure: true,
-      // });
-
       res.status(200).json({
         message: `Verification Email Sent ${email}.`,
       });
@@ -131,16 +123,7 @@ exports.register = asyncHandler(async (req, res) => {
     );
 
     if (saveUser.rows.length) {
-      const {
-        user_id,
-        nidn,
-        email,
-        // hashedPassword,
-        // role,
-        // userAgent,
-        // isverified,
-        // created_at,
-      } = saveUser.rows[0];
+      const { user_id, nidn, email } = saveUser.rows[0];
 
       // Create verification token
       const verificationToken =
@@ -174,15 +157,6 @@ exports.register = asyncHandler(async (req, res) => {
       } catch (error) {
         throw new Error("Email not send, please try again");
       }
-
-      // Send HTTP-only Cookie
-      // res.cookie("token", token, {
-      //   path: "/",
-      //   httpOnly: true,
-      //   expires: new Date(Date.now() + 1000 * 86400), // 1 day
-      //   sameSite: "none",
-      //   secure: true,
-      // });
 
       res.status(200).json({
         message: `Verification Email Sent ${email}.`,
@@ -263,6 +237,8 @@ exports.loginUser = asyncHandler(async (req, res) => {
     const link = verificationUrl;
 
     await sendMail(subject, send_to, send_from, template, name, link);
+
+    res.status(399);
     throw new Error("Account not verified. Check your email for verification.");
   }
 
@@ -298,6 +274,8 @@ exports.loginUser = asyncHandler(async (req, res) => {
   // END
 
   const id = user.rows[0].user_id;
+  // // Generate Token
+  const token = generateToken(id);
 
   const findDataPribadi = await DB.query(
     "SELECT * FROM tb_data_pribadi WHERE user_id = $1",
@@ -305,12 +283,18 @@ exports.loginUser = asyncHandler(async (req, res) => {
   );
 
   if (!findDataPribadi.rows.length) {
-    res.status(400);
+    res.status(300);
+    // Send HTTP-only Cookie
+    res.cookie("token", token, {
+      path: "/",
+      httpOnly: true,
+      expires: new Date(Date.now() + 1000 * 86400), // 1 day
+      sameSite: "none",
+      secure: true,
+    });
+
     throw new Error("Please complete the purchased personal data first.");
   }
-
-  // // Generate Token
-  const token = generateToken(id);
 
   if (user.rows.length && passwordIsCorrect) {
     const {
@@ -617,7 +601,11 @@ exports.verifyUser = asyncHandler(async (req, res) => {
     [true, user.rows[0].user_id]
   );
 
-  if (verifyUser.rows[0].isverified) {
+  const { user_id, npm, nidn, username, email, role, isverified, created_at } =
+    verifyUser.rows[0];
+  // Send HTTP-only Cookie
+
+  if (verifyUser.rows[0].isverified === true) {
     const token = generateToken(user.rows[0].user_id);
     // Send HTTP-only Cookie
     res.cookie("token", token, {
@@ -630,6 +618,17 @@ exports.verifyUser = asyncHandler(async (req, res) => {
 
     res.status(200).json({
       message: "Account verification successfully",
+      data: {
+        user_id,
+        npm,
+        nidn,
+        username,
+        email,
+        role,
+        isverified,
+        created_at,
+        token,
+      },
     });
   }
 });
@@ -901,6 +900,36 @@ exports.changePassword = asyncHandler(async (req, res) => {
   } else {
     res.status(400);
     throw new Error("Old password is incorrect.");
+  }
+});
+
+exports.sendAutomatedEmail = asyncHandler(async (req, res) => {
+  const { subject, send_to, template, url } = req.body;
+
+  if (!subject || !send_to || !template) {
+    res.status(400);
+    throw new Error("Missing email parameter.");
+  }
+
+  // Get user
+  const user = await DB.query("SELECT * FROM tb_users WHERE email = $1", [
+    send_to,
+  ]);
+
+  if (!user.rows.length) {
+    res.status(404);
+    throw new Error("User not found.");
+  }
+
+  const send_from = process.env.EMAIL_USER;
+  const link = `${process.env.FRONTEND_URL}${url}`;
+
+  try {
+    await sendEmail(subject, send_to, send_from, template, link);
+
+    res.status(200).json({ message: "Email Sent!" });
+  } catch (error) {
+    throw new Error("Email not send, please try again.");
   }
 });
 

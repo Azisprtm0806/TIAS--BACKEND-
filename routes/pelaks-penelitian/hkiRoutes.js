@@ -12,6 +12,7 @@ const {
   detailDokumenHki,
   editDokumenHki,
   updateStatusHki,
+  filterDataHki,
 } = require("../../controllers/pelaks-penelitian/hkiController");
 
 const router = express.Router();
@@ -23,6 +24,7 @@ router.get("/detailHki/:hkiId", protected, detailDataHki);
 router.patch("/editHki/:hkiId", protected, hkiUpload, editDataHki);
 router.delete("/deleteHki/:hkiId", protected, deleteHki);
 router.patch("/updateStatus/:hkiId", protected, adminOnly, updateStatusHki);
+router.get("/filterHki", protected, filterDataHki);
 // ============= END PENELITIAN =====================
 
 // ============= DOKUMEN PENELITIAN ==============

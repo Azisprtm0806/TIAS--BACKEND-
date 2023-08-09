@@ -267,3 +267,22 @@ exports.editStatusRiwayatPekerjaan = asyncHandler(async (req, res) => {
     throw new Error("Data not found.");
   }
 });
+
+exports.filterDataRiwayatPekerjaan = asyncHandler(async (req, res) => {
+  const userLoginId = req.user.user_id;
+  const data = req.body;
+
+  const jenis_pekerjaan = data.jenis_pekerjaan || null;
+  const area_kerja = data.area_kerja || null;
+  const mulai_kerja = data.mulai_kerja || null;
+  const selesai_Kerja = data.selesai_Kerja || null;
+
+  const findData = await DB.query(
+    `SELECT * FROM filter_data_riwayat_pekerjaan($1, $2, $3, $4, $5)`,
+    [jenis_pekerjaan, area_kerja, mulai_kerja, selesai_Kerja, userLoginId]
+  );
+
+  res.status(201).json({
+    data: findData.rows,
+  });
+});

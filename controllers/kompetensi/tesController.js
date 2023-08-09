@@ -220,3 +220,22 @@ exports.editStatusTes = asyncHandler(async (req, res) => {
     throw new Error("Data not found.");
   }
 });
+
+exports.filterDataTes = asyncHandler(async (req, res) => {
+  const userLoginId = req.user.user_id;
+  const data = req.body;
+
+  const nama_tes = data.nama_tes || null;
+  const jenis_tes = data.jenis_tes || null;
+  const penyelenggara = data.penyelenggara || null;
+  const tgl_tes = data.tgl_tes || null;
+
+  const findData = await DB.query(
+    `SELECT * FROM filter_data_tes($1, $2, $3, $4, $5)`,
+    [nama_tes, jenis_tes, penyelenggara, tgl_tes, userLoginId]
+  );
+
+  res.status(201).json({
+    data: findData.rows,
+  });
+});

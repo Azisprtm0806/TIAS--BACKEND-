@@ -338,6 +338,24 @@ exports.updateStatusPembicara = asyncHandler(async (req, res) => {
     throw new Error("Data not found.");
   }
 });
+
+exports.filterDataPembicara = asyncHandler(async (req, res) => {
+  const userLoginId = req.user.user_id;
+  const data = req.body;
+
+  const judul_makalah = data.judul_makalah || null;
+  const penyelenggara = data.penyelenggara || null;
+  const tgl_pelaksanaan = data.tgl_pelaksanaan || null;
+
+  const findData = await DB.query(
+    `SELECT * FROM filter_data_pembicara($1, $2, $3, $4)`,
+    [judul_makalah, penyelenggara, tgl_pelaksanaan, userLoginId]
+  );
+
+  res.status(201).json({
+    data: findData.rows,
+  });
+});
 // ==================== END  Pembicara ==========================
 
 // ===================== DOKUMEN PEMBICARA =====================

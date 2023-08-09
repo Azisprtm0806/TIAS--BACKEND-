@@ -250,3 +250,21 @@ exports.updateStatusIp = asyncHandler(async (req, res) => {
     throw new Error("Data not found.");
   }
 });
+
+exports.filterDataIp = asyncHandler(async (req, res) => {
+  const userLoginId = req.user.user_id;
+  const data = req.body;
+
+  const semester = data.semester || null;
+  const ip = data.ip || null;
+  const tahun = data.tahun || null;
+
+  const findData = await DB.query(
+    `SELECT * FROM filter_data_ip($1, $2, $3, $4)`,
+    [semester, ip, tahun, userLoginId]
+  );
+
+  res.status(201).json({
+    data: findData.rows,
+  });
+});

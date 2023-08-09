@@ -17,6 +17,7 @@ const {
   editDataTes,
   deleteTes,
   editStatusTes,
+  filterDataTes,
 } = require("../../controllers/kompetensi/tesController");
 const router = express.Router();
 
@@ -47,6 +48,7 @@ router.get("/detailTes/:tesId", protected, detailDataTes);
 router.patch("/editTes/:tesId", protected, kompetensiUpload, editDataTes);
 router.delete("/deleteTes/:tesId", protected, deleteTes);
 router.patch("/updateStatusTes/:tesId", protected, adminOnly, editStatusTes);
+router.get("/filterTes", protected, filterDataTes);
 // ================== END TES ==================
 
 module.exports = router;

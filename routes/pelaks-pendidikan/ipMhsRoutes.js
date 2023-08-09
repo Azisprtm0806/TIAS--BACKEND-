@@ -11,6 +11,7 @@ const {
   deleteDataIp,
   editDataIp,
   updateStatusIp,
+  filterDataIp,
 } = require("../../controllers/pelaks-pendidikan/ipMhsController");
 
 const router = express.Router();
@@ -22,6 +23,7 @@ router.get("/detail/:ipId", protected, adminMhsOnly, detailDataIp);
 router.patch("/edit/:ipId", protected, adminMhsOnly, editDataIp);
 router.delete("/delete/:ipId", protected, adminMhsOnly, deleteDataIp);
 router.patch("/updateStatus/:ipId", protected, adminOnly, updateStatusIp);
+router.get("/filterDataIp", protected, filterDataIp);
 // ============= END PENELITIAN =====================
 
 module.exports = router;

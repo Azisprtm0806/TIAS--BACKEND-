@@ -15,6 +15,7 @@ const {
   changePassword,
   deleteExpired,
   getAllUsers,
+  sendAutomatedEmail,
 } = require("../../controllers/Authentication/authController");
 const { protected, adminOnly } = require("../../middleware/authMiddleware");
 
@@ -37,6 +38,8 @@ router.post("/forgotPassword", forgotPassword);
 
 router.patch("/resetPassword/:resetToken", resetPassword);
 router.patch("/changePassword", protected, changePassword);
+
+router.post("/sendAutomatedEmail", protected, sendAutomatedEmail);
 
 router.get("/deleteExpired", deleteExpired);
 
