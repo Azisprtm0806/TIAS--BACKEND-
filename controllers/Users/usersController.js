@@ -6,15 +6,10 @@ exports.getUserMhs = asyncHandler(async (req, res) => {
     "SELECT tb_users.*, tb_data_pribadi.* FROM tb_users JOIN tb_data_pribadi ON tb_users.user_id=tb_data_pribadi.user_id WHERE tb_users.role = 'Mahasiswa'"
   );
 
-  if (user.rows.length) {
-    res.status(200).json({
-      message: "Success get data.",
-      data: user.rows,
-    });
-  } else {
-    res.status(404);
-    throw new Error("User not found.");
-  }
+  res.status(200).json({
+    message: "Success get data.",
+    data: user.rows,
+  });
 });
 
 exports.getUserDosen = asyncHandler(async (req, res) => {
@@ -22,15 +17,10 @@ exports.getUserDosen = asyncHandler(async (req, res) => {
     "SELECT tb_users.*, tb_data_pribadi.* FROM tb_users JOIN tb_data_pribadi ON tb_users.user_id=tb_data_pribadi.user_id WHERE tb_users.role = 'Dosen'"
   );
 
-  if (user.rows.length) {
-    res.status(200).json({
-      message: "Success get data.",
-      data: user.rows,
-    });
-  } else {
-    res.status(404);
-    throw new Error("User not found.");
-  }
+  res.status(200).json({
+    message: "Success get data.",
+    data: user.rows,
+  });
 });
 
 exports.detailUser = asyncHandler(async (req, res) => {
