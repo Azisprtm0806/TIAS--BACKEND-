@@ -2,7 +2,7 @@ const asyncHandler = require("express-async-handler");
 const DB = require("../../database");
 const path = require("path");
 const fs = require("fs-extra");
-const { unixTimestamp, convertDate } = require("../../utils");
+const { unixTimestamp, convertDate, dateToUnix } = require("../../utils");
 
 exports.createDataSerti = asyncHandler(async (req, res) => {
   const userLoginId = req.user.user_id;
@@ -36,22 +36,6 @@ exports.createDataSerti = asyncHandler(async (req, res) => {
       });
       res.status(400);
       throw new Error("Pleas fill in all the required fields.");
-    }
-
-    const existsNomorSK = await DB.query(
-      "SELECT * FROM tb_sertifikasi WHERE nomor_sk = $1",
-      [data.nomor_sk]
-    );
-
-    if (existsNomorSK.rows.length) {
-      fs.unlink(file.file_serti[0].path, (err) => {
-        if (err) {
-          console.log(err);
-        }
-        return;
-      });
-      res.status(400);
-      throw new Error("Nomor SK already exists.");
     }
 
     const cekKategoriId = await DB.query(
@@ -107,13 +91,13 @@ exports.createDataSerti = asyncHandler(async (req, res) => {
 exports.getDataSerti = asyncHandler(async (req, res) => {
   const userLoginId = req.user.user_id;
 
-  const query = `SELECT tb_sertifikasi.*, kategori_sertifikasi.nama_kategori, kategori_sertifikasi.point FROM tb_sertifikasi JOIN kategori_sertifikasi ON tb_sertifikasi.kategori_id=kategori_sertifikasi.id WHERE tb_sertifikasi.user_id = '${userLoginId}' and status = 1 and is_deleted = ${false}`;
+  const query = `SELECT tb_sertifikasi.*, kategori_sertifikasi.nama_kategori, kategori_sertifikasi.point FROM tb_sertifikasi JOIN kategori_sertifikasi ON tb_sertifikasi.kategori_id=kategori_sertifikasi.id WHERE tb_sertifikasi.user_id = '${userLoginId}' and is_deleted = ${false}`;
 
   const dataSerti = await DB.query(query);
 
   const jumlahData = await DB.query(
-    "SELECT COUNT(*) FROM tb_sertifikasi WHERE user_id = $1 and status = $2 and is_deleted = $3",
-    [userLoginId, 1, false]
+    "SELECT COUNT(*) FROM tb_sertifikasi WHERE user_id = $1  and is_deleted = $2",
+    [userLoginId, false]
   );
 
   res.status(201).json({
@@ -151,47 +135,6 @@ exports.editDataSerti = asyncHandler(async (req, res) => {
   if (findData.rows.length) {
     const file = req.files;
     const data = req.body;
-
-    const existsNomorSK = await DB.query(
-      "SELECT * FROM tb_sertifikasi WHERE nomor_sk = $1",
-      [data.nomor_sk]
-    );
-
-    if (existsNomorSK.rows.length) {
-      if (Object.keys(file).length === 0) {
-        res.status(400);
-        throw new Error("Nomor SK already exists.");
-      } else {
-        fs.unlink(file.file_serti[0].path, (err) => {
-          if (err) {
-            console.log(err);
-          }
-          return;
-        });
-        res.status(400);
-        throw new Error("Nomor SK already exists.");
-      }
-    }
-
-    const existsNamaSerti = await DB.query(
-      `SELECT * FROM tb_sertifikasi WHERE CAST(user_id AS TEXT) LIKE '%${userLoginId}%' AND nama_serti LIKE '%${data.nama_serti}%'`
-    );
-
-    if (existsNamaSerti.rows.length) {
-      if (Object.keys(file).length === 0) {
-        res.status(400);
-        throw new Error("Name Certification already exists.");
-      } else {
-        fs.unlink(file.file_serti[0].path, (err) => {
-          if (err) {
-            console.log(err);
-          }
-          return;
-        });
-        res.status(400);
-        throw new Error("Name Certification already exists.");
-      }
-    }
 
     if (Object.keys(file).length === 0) {
       const updated_at = unixTimestamp;
@@ -264,32 +207,27 @@ exports.deleteDataSerti = asyncHandler(async (req, res) => {
     [true, convert, findData.rows[0].sertifikat_id]
   );
 
-  if (deleteSerti.rows.length) {
+  if (deleteSerti.rows[0].status == 2 || deleteSerti.rows[0].status == 0) {
+    res.status(200).json({ message: "Data deleted successfully." });
+  } else {
     const data = await DB.query(
       "SELECT tb_sertifikasi.*, kategori_sertifikasi.nama_kategori, kategori_sertifikasi.point FROM tb_sertifikasi NATURAL JOIN kategori_sertifikasi WHERE id = $1",
       [deleteSerti.rows[0].kategori_id]
     );
 
     const point = data.rows[0].point;
-    const userId = data.rows[0].user_id;
+    const userId = findData.rows[0].user_id;
 
     await DB.query(
-      "UPDATE tb_data_pribadi SET point_kompetensi = point_kompetensi - $1 WHERE user_id = $2",
-      [point, userId]
+      `UPDATE tb_data_pribadi SET point_kompetensi = point_kompetensi - ${point} WHERE user_id = '${userId}'`
     );
-  }
 
-  res.status(200).json({ message: "Data deleted successfully." });
+    res.status(200).json({ message: "Data deleted successfully." });
+  }
 });
 
-exports.editStatusSerti = asyncHandler(async (req, res) => {
+exports.approveStatusSerti = asyncHandler(async (req, res) => {
   const { certifId } = req.params;
-  const data = req.body;
-
-  if (!data.status) {
-    res.status(400);
-    throw new Error("Pleas fill in all the required fields.");
-  }
 
   const findData = await DB.query(
     "SELECT * FROM tb_sertifikasi WHERE sertifikat_id = $1",
@@ -301,27 +239,49 @@ exports.editStatusSerti = asyncHandler(async (req, res) => {
     const convert = convertDate(updated_at);
     const updateStatus = await DB.query(
       `UPDATE tb_sertifikasi SET status = $1, updated_at = $2 WHERE sertifikat_id = $3 returning *`,
-      [data.status, convert, certifId]
+      [1, convert, certifId]
     );
 
-    if (updateStatus.rows[0].status === 1) {
-      const data = await DB.query(
-        "SELECT tb_sertifikasi.*, kategori_sertifikasi.nama_kategori, kategori_sertifikasi.point FROM tb_sertifikasi NATURAL JOIN kategori_sertifikasi WHERE id = $1",
-        [updateStatus.rows[0].kategori_id]
-      );
+    const data = await DB.query(
+      "SELECT tb_sertifikasi.*, kategori_sertifikasi.nama_kategori, kategori_sertifikasi.point FROM tb_sertifikasi NATURAL JOIN kategori_sertifikasi WHERE id = $1",
+      [updateStatus.rows[0].kategori_id]
+    );
 
-      const point = data.rows[0].point;
-      const userId = data.rows[0].user_id;
+    const point = data.rows[0].point;
+    const userId = findData.rows[0].user_id;
 
-      await DB.query(
-        "UPDATE tb_data_pribadi SET point_kompetensi = point_kompetensi + $1 WHERE user_id = $2",
-        [point, userId]
-      );
-    }
+    await DB.query(
+      "UPDATE tb_data_pribadi SET point_kompetensi = point_kompetensi + $1 WHERE user_id = $2",
+      [point, userId]
+    );
 
     res.status(201).json({
-      message: "Successfully update data.",
-      data: updateStatus.rows[0],
+      message: "Data has been received.",
+    });
+  } else {
+    res.status(404);
+    throw new Error("Data not found.");
+  }
+});
+
+exports.rejectStatusSerti = asyncHandler(async (req, res) => {
+  const { certifId } = req.params;
+
+  const findData = await DB.query(
+    "SELECT * FROM tb_sertifikasi WHERE sertifikat_id = $1",
+    [certifId]
+  );
+
+  if (findData.rows.length) {
+    const updated_at = unixTimestamp;
+    const convert = convertDate(updated_at);
+    await DB.query(
+      `UPDATE tb_sertifikasi SET status = $1, updated_at = $2 WHERE sertifikat_id = $3 returning *`,
+      [2, convert, certifId]
+    );
+
+    res.status(201).json({
+      message: "Data has been rejected.",
     });
   } else {
     res.status(404);

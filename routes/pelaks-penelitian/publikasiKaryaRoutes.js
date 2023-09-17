@@ -10,8 +10,9 @@ const {
   detailDokumenPublikasi,
   deleteDokumenPublikasi,
   editDokumenPublikasi,
-  updateStatusPublikasi,
   filterDataPublikasi,
+  rejectStatusPublikasi,
+  approveStatusPublikasi,
 } = require("../../controllers/pelaks-penelitian/publikasiKaryaController");
 const {
   publikasiKaryaUpload,
@@ -31,10 +32,16 @@ router.patch(
 );
 router.delete("/deletePublikasi/:publikasiId", protected, deleteDataPublikasi);
 router.patch(
-  "/updateStatus/:publikasiId",
+  "/approveStatus/:publikasiId",
   protected,
   adminOnly,
-  updateStatusPublikasi
+  approveStatusPublikasi
+);
+router.patch(
+  "/rejectStatus/:publikasiId",
+  protected,
+  adminOnly,
+  rejectStatusPublikasi
 );
 router.get("/filter", protected, filterDataPublikasi);
 // ============= END PENELITIAN =====================

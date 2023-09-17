@@ -126,13 +126,13 @@ exports.getDataPembicara = asyncHandler(async (req, res) => {
   const userLoginId = req.user.user_id;
 
   const findData = await DB.query(
-    "SELECT * FROM tb_pembicara WHERE user_id = $1 and status = $2 and is_deleted = $3",
-    [userLoginId, 1, false]
+    "SELECT * FROM tb_pembicara WHERE user_id = $1  and is_deleted = $2",
+    [userLoginId, false]
   );
 
   const jumlahData = await DB.query(
-    "SELECT COUNT(*) FROM tb_pembicara WHERE user_id = $1 and status = $2 and is_deleted = $3",
-    [userLoginId, 1, false]
+    "SELECT COUNT(*) FROM tb_pembicara WHERE user_id = $1  and is_deleted = $2",
+    [userLoginId, false]
   );
 
   res.status(201).json({
@@ -307,14 +307,8 @@ exports.editDataPembicara = asyncHandler(async (req, res) => {
   }
 });
 
-exports.updateStatusPembicara = asyncHandler(async (req, res) => {
+exports.approveStatusPembicara = asyncHandler(async (req, res) => {
   const { pembicaraId } = req.params;
-  const data = req.body;
-
-  if (!data.status) {
-    res.status(400);
-    throw new Error("Pleas fill in all the required fields.");
-  }
 
   const findData = await DB.query(
     "SELECT * FROM tb_pembicara WHERE pembicara_id = $1",
@@ -324,14 +318,38 @@ exports.updateStatusPembicara = asyncHandler(async (req, res) => {
   if (findData.rows.length) {
     const updated_at = unixTimestamp;
     const convert = convertDate(updated_at);
-    const updateStatus = await DB.query(
+    await DB.query(
       `UPDATE tb_pembicara SET status = $1, updated_at = $2 WHERE pembicara_id = $3`,
-      [data.status, convert, pembicaraId]
+      [1, convert, pembicaraId]
     );
 
     res.status(201).json({
-      message: "Successfully update data.",
-      data: updateStatus.rows[0],
+      message: "Data has been received.",
+    });
+  } else {
+    res.status(404);
+    throw new Error("Data not found.");
+  }
+});
+
+exports.rejectStatusPembicara = asyncHandler(async (req, res) => {
+  const { pembicaraId } = req.params;
+
+  const findData = await DB.query(
+    "SELECT * FROM tb_pembicara WHERE pembicara_id = $1",
+    [pembicaraId]
+  );
+
+  if (findData.rows.length) {
+    const updated_at = unixTimestamp;
+    const convert = convertDate(updated_at);
+    await DB.query(
+      `UPDATE tb_pembicara SET status = $1, updated_at = $2 WHERE pembicara_id = $3`,
+      [2, convert, pembicaraId]
+    );
+
+    res.status(201).json({
+      message: "Data has been rejected",
     });
   } else {
     res.status(404);

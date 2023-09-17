@@ -12,6 +12,8 @@ const {
   editDokumenPembicara,
   updateStatusPembicara,
   filterDataPembicara,
+  approveStatusPembicara,
+  rejectStatusPembicara,
 } = require("../../controllers/pelaks-pengabdian/pembicaraController");
 const {
   dokumenPembicaraUpload,
@@ -36,10 +38,16 @@ router.patch(
 );
 router.delete("/deletePembicara/:pembicaraId", protected, deleteDataPembicara);
 router.patch(
-  "/updateStatusPembicara/:pembicaraId",
+  "/approveStatusPembicara/:pembicaraId",
   protected,
   adminOnly,
-  updateStatusPembicara
+  approveStatusPembicara
+);
+router.patch(
+  "/rejectStatusPembicara/:pembicaraId",
+  protected,
+  adminOnly,
+  rejectStatusPembicara
 );
 router.get("/filterPembicara", protected, filterDataPembicara);
 // ============= END PENELITIAN =====================

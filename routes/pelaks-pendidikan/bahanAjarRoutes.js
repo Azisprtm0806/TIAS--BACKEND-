@@ -12,11 +12,12 @@ const {
   detailDataBahanAjar,
   editDataBahanAjar,
   deleteDataBahanAjar,
-  updateStatusBahanAjar,
   addDokumenBahanAjar,
   detailDokumenbahanAjar,
   deleteDokumenBahanAjar,
   editDokumenBahanAjar,
+  approveStatusBahanAjar,
+  rejectStatusBahanAjar,
 } = require("../../controllers/pelaks-pendidikan/bahanAjarController");
 
 const router = express.Router();
@@ -44,10 +45,16 @@ router.delete(
   deleteDataBahanAjar
 );
 router.patch(
-  "/update/:bahanAjarId",
+  "/approve/:bahanAjarId",
   protected,
   adminDosenOnly,
-  updateStatusBahanAjar
+  approveStatusBahanAjar
+);
+router.patch(
+  "/reject/:bahanAjarId",
+  protected,
+  adminDosenOnly,
+  rejectStatusBahanAjar
 );
 // ============= END  =====================
 
@@ -55,7 +62,12 @@ router.patch(
 router.post("/addDokumen", protected, bahanAjarUpload, addDokumenBahanAjar);
 router.get("/detailDokumen/:dokumenId", protected, detailDokumenbahanAjar);
 router.delete("/deleteDokumen/:dokumenId", protected, deleteDokumenBahanAjar);
-router.patch("/editDokumen/:dokumenId", protected, bahanAjarUpload, editDokumenBahanAjar);
+router.patch(
+  "/editDokumen/:dokumenId",
+  protected,
+  bahanAjarUpload,
+  editDokumenBahanAjar
+);
 // ============= END DOKUMEN  ==========
 
 module.exports = router;

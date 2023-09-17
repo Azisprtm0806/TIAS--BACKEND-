@@ -16,6 +16,8 @@ const {
   editDataPenelitian,
   updateStatusPenelitian,
   filterDataPenelitian,
+  approveStatusPenelitian,
+  rejectedStatusPenelitian,
 } = require("../../controllers/pelaks-penelitian/penelitianController");
 const {
   dokumenPenelitianUpload,
@@ -44,10 +46,16 @@ router.delete(
   deleteDataPenelitian
 );
 router.patch(
-  "/updateStatus/:penelitianId",
+  "/approveStatus/:penelitianId",
   protected,
   adminOnly,
-  updateStatusPenelitian
+  approveStatusPenelitian
+);
+router.patch(
+  "/rejectStatus/:penelitianId",
+  protected,
+  adminOnly,
+  rejectedStatusPenelitian
 );
 router.get("/filter", protected, filterDataPenelitian);
 // ============= END PENELITIAN =====================

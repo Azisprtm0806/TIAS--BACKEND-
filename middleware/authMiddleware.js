@@ -4,7 +4,12 @@ const jwt = require("jsonwebtoken");
 
 exports.protected = asyncHandler(async (req, res, next) => {
   try {
-    const { token } = req.cookies;
+    // dev/test
+    // const { token } = req.cookies;
+
+    // Production
+    const { token } = req.headers;
+
     if (!token) {
       res.status(401);
       throw new Error("Not Authorized, Pleas login.");

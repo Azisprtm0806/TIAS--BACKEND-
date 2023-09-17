@@ -92,7 +92,7 @@ exports.addDataHki = asyncHandler(async (req, res) => {
     // ==============DOKUMEN HKI===================
     const dokumenHki = {
       nama_dok: data.nama_dok,
-      keterangan: data.keterangan,
+      keterangan_dok: data.keterangan_dok,
       tautan_dok: data.tautan_dok,
       file: file.filename,
     };
@@ -130,18 +130,18 @@ exports.addDataHki = asyncHandler(async (req, res) => {
 exports.getDataHki = asyncHandler(async (req, res) => {
   const userLoginId = req.user.user_id;
 
-  const query = `SELECT tb_hki.*, kategori_hki.nama_kategori, kategori_hki.point FROM tb_hki JOIN kategori_hki ON tb_hki.kategori_id=kategori_hki.id WHERE tb_hki.user_id = '${userLoginId}' and status = 1 and is_deleted = ${false}`;
+  const query = `SELECT tb_hki.*, kategori_hki.nama_kategori, kategori_hki.point FROM tb_hki JOIN kategori_hki ON tb_hki.kategori_id=kategori_hki.id WHERE tb_hki.user_id = '${userLoginId}' and is_deleted = ${false}`;
 
   const dataHki = await DB.query(query);
 
   const jumlahData = await DB.query(
-    "SELECT COUNT(*) FROM tb_hki WHERE user_id = $1 and status = $2 and is_deleted = $3",
-    [userLoginId, 1, false]
+    "SELECT COUNT(*) FROM tb_hki WHERE user_id = $1  and is_deleted = $2",
+    [userLoginId, false]
   );
 
   res.status(201).json({
     data: dataHki.rows,
-    jumlahData: jumlahData.rows[0].count,
+    totalData: jumlahData.rows[0].count,
   });
 });
 
@@ -197,7 +197,9 @@ exports.deleteHki = asyncHandler(async (req, res) => {
     [true, convert, hkiId]
   );
 
-  if (deleteHki.rows.length) {
+  if (deleteHki.rows[0].status == 0 || deleteHki.rows[0].status == 2) {
+    res.status(200).json({ message: "Data deleted successfully." });
+  } else {
     const data = await DB.query(
       "SELECT tb_hki.*, kategori_hki.nama_kategori, kategori_hki.point FROM tb_hki NATURAL JOIN kategori_hki WHERE id = $1",
       [deleteHki.rows[0].kategori_id]
@@ -207,12 +209,11 @@ exports.deleteHki = asyncHandler(async (req, res) => {
     const userId = data.rows[0].user_id;
 
     await DB.query(
-      "UPDATE tb_data_pribadi SET point_penelitian = point_penelitian - $1 WHERE user_id = $2",
-      [point, userId]
+      `UPDATE tb_data_pribadi SET point_penelitian = point_penelitian - ${point} WHERE user_id = '${userId}'`
     );
-  }
 
-  res.status(200).json({ message: "Data deleted successfully." });
+    res.status(200).json({ message: "Data deleted successfully." });
+  }
 });
 
 exports.editDataHki = asyncHandler(async (req, res) => {
@@ -290,16 +291,16 @@ exports.editDataHki = asyncHandler(async (req, res) => {
         );
       });
     }
-    // END PENULIS PUBLIKASI
+    // END PENULIS HKi
 
     // Add Dokumen
-    if (data.nama_dok || data.keterangan || data.tautan_dok || file) {
+    if (data.nama_dok || data.keterangan_dok || data.tautan_dok || file) {
       if (!file) {
         res.status(400);
         throw new Error("Please fill in one file.");
       }
 
-      if (!data.nama_dok || !data.keterangan) {
+      if (!data.nama_dok || !data.keterangan_dok) {
         fs.unlink(file.path, (err) => {
           if (err) {
             console.log(err);
@@ -324,7 +325,7 @@ exports.editDataHki = asyncHandler(async (req, res) => {
 
       const dokumen = {
         nama_dok: data.nama_dok,
-        keterangan: data.keterangan,
+        keterangan_dok: data.keterangan_dok,
         tautan_dok: data.tautan_dok,
       };
 
@@ -368,14 +369,8 @@ exports.editDataHki = asyncHandler(async (req, res) => {
   }
 });
 
-exports.updateStatusHki = asyncHandler(async (req, res) => {
+exports.approveStatusHki = asyncHandler(async (req, res) => {
   const { hkiId } = req.params;
-  const data = req.body;
-
-  if (!data.status) {
-    res.status(400);
-    throw new Error("Pleas fill in all the required fields.");
-  }
 
   const findData = await DB.query("SELECT * FROM tb_hki WHERE hki_id = $1", [
     hkiId,
@@ -386,27 +381,47 @@ exports.updateStatusHki = asyncHandler(async (req, res) => {
     const convert = convertDate(updated_at);
     const updateStatus = await DB.query(
       `UPDATE tb_hki SET status = $1, updated_at = $2 WHERE hki_id = $3 returning *`,
-      [data.status, convert, hkiId]
+      [1, convert, hkiId]
     );
 
-    if (updateStatus.rows[0].status === 1) {
-      const data = await DB.query(
-        "SELECT tb_hki.*, kategori_hki.nama_kategori, kategori_hki.point FROM tb_hki NATURAL JOIN kategori_hki WHERE id = $1",
-        [updateStatus.rows[0].kategori_id]
-      );
+    const data = await DB.query(
+      "SELECT tb_hki.*, kategori_hki.nama_kategori, kategori_hki.point FROM tb_hki NATURAL JOIN kategori_hki WHERE id = $1",
+      [updateStatus.rows[0].kategori_id]
+    );
 
-      const point = data.rows[0].point;
-      const userId = data.rows[0].user_id;
+    const point = data.rows[0].point;
+    const userId = data.rows[0].user_id;
 
-      await DB.query(
-        "UPDATE tb_data_pribadi SET point_penelitian = point_penelitian + $1 WHERE user_id = $2",
-        [point, userId]
-      );
-    }
+    await DB.query(
+      `UPDATE tb_data_pribadi SET point_penelitian = point_penelitian + ${point} WHERE user_id = '${userId}'`
+    );
 
     res.status(201).json({
-      message: "Successfully update data.",
-      data: updateStatus.rows[0],
+      message: "Data has been received.",
+    });
+  } else {
+    res.status(404);
+    throw new Error("Data not found.");
+  }
+});
+
+exports.rejectStatusHki = asyncHandler(async (req, res) => {
+  const { hkiId } = req.params;
+
+  const findData = await DB.query("SELECT * FROM tb_hki WHERE hki_id = $1", [
+    hkiId,
+  ]);
+
+  if (findData.rows.length) {
+    const updated_at = unixTimestamp;
+    const convert = convertDate(updated_at);
+    await DB.query(
+      `UPDATE tb_hki SET status = $1, updated_at = $2 WHERE hki_id = $3 returning *`,
+      [2, convert, hkiId]
+    );
+
+    res.status(201).json({
+      message: "Data has been rejected.",
     });
   } else {
     res.status(404);
@@ -458,7 +473,7 @@ exports.addDokumenHki = asyncHandler(async (req, res) => {
     throw new Error("Data HKI not found.");
   }
 
-  if (!data.nama_dok || !data.keterangan) {
+  if (!data.nama_dok || !data.keterangan_dok) {
     fs.unlink(file.path, (err) => {
       if (err) {
         console.log(err);

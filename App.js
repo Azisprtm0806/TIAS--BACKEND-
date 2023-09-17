@@ -31,7 +31,7 @@ app.use(bodyParser.json());
 app.use(express.static("public"));
 app.use(
   cors({
-    origin: ["http://localhost:3000", "https://tias.vercel.app"],
+    origin: "http://localhost:3000",
     credentials: true,
   })
 );

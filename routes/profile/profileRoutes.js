@@ -26,7 +26,8 @@ const {
   editDataJabatan,
   deleteDataJabatan,
   detailDataJabatan,
-  updateStatusJabatan,
+  approveStatusJabatan,
+  rejectStatusJabatan,
 } = require("../../controllers/profile/jabatanController");
 const {
   addDataKepangkatan,
@@ -35,6 +36,8 @@ const {
   deleteDataKepangkatan,
   detailDataKepangkatan,
   updateStatusKepangkatan,
+  approveStatusKepangkatan,
+  rejectStatusKepangkatan,
 } = require("../../controllers/profile/kepangkatanController");
 const { profileUpload } = require("../../middleware/profileUpload");
 const { profileImageUpload } = require("../../middleware/profileImageUpload");
@@ -87,10 +90,16 @@ router.delete(
   deleteDataJabatan
 );
 router.patch(
-  "/updateStatusJabatan/:jabId",
+  "/approveStatusJabatan/:jabId",
   protected,
   adminOnly,
-  updateStatusJabatan
+  approveStatusJabatan
+);
+router.patch(
+  "/rejectStatusJabatan/:jabId",
+  protected,
+  adminOnly,
+  rejectStatusJabatan
 );
 // =============== END JABATAN DOSEN ================
 
@@ -128,10 +137,16 @@ router.delete(
   deleteDataKepangkatan
 );
 router.patch(
-  "/updateStatusPangkat/:pangkatId",
+  "/approveStatusPangkat/:pangkatId",
   protected,
   adminOnly,
-  updateStatusKepangkatan
+  approveStatusKepangkatan
+);
+router.patch(
+  "/rejectStatusPangkat/:pangkatId",
+  protected,
+  adminOnly,
+  rejectStatusKepangkatan
 );
 // ============== END KEPANGAKATAN DOSEN ==================
 

@@ -13,7 +13,9 @@ const {
   detailDokumenPengabdian,
   deleteDokumenPengabdian,
   editDokumenPengabdian,
-  updateStatusPengabdian,
+  filterDataPengabdian,
+  approveStatusPengabdian,
+  rejectStatusPengabdian,
 } = require("../../controllers/pelaks-pengabdian/pengabdianController");
 
 const router = express.Router();
@@ -34,11 +36,18 @@ router.delete(
   deleteDataPengabdian
 );
 router.patch(
-  "/updateStatusPengabdian/:pengabdianId",
+  "/approveStatusPengabdian/:pengabdianId",
   protected,
   adminOnly,
-  updateStatusPengabdian
+  approveStatusPengabdian
 );
+router.patch(
+  "/rejectStatusPengabdian/:pengabdianId",
+  protected,
+  adminOnly,
+  rejectStatusPengabdian
+);
+router.get("/filterPengabdian", protected, filterDataPengabdian);
 // ============= END PENGABDIAN =====================
 
 // ============= DOKUMEN PENGABDIAN ==============

@@ -94,17 +94,16 @@ exports.register = asyncHandler(async (req, res) => {
       );
 
       // Construct Verification Token
-      const verificationUrl = `${process.env.FRONTEND_URL}/verify/${verificationToken}`;
+      const verificationUrl = `${process.env.FRONTEND_URL}/verification/${verificationToken}`;
 
       // Send verification email
       const subject = "Verify Your Account";
       const send_to = email;
       const send_from = process.env.EMAIL_USER;
       const template = "verifyEMail";
-      const name = npm;
       const link = verificationUrl;
 
-      await sendMail(subject, send_to, send_from, template, name, link);
+      await sendMail(subject, send_to, send_from, template, link);
 
       res.status(200).json({
         message: `Verification Email Sent ${email}.`,
@@ -142,18 +141,17 @@ exports.register = asyncHandler(async (req, res) => {
       );
 
       // Construct Verification Token
-      const verificationUrl = `${process.env.FRONTEND_URL}/verify/${verificationToken}`;
+      const verificationUrl = `${process.env.FRONTEND_URL}/verification/${verificationToken}`;
 
       // Send verification email
       const subject = "Verify Your Account";
       const send_to = email;
       const send_from = process.env.EMAIL_USER;
       const template = "verifyEMail";
-      const name = nidn;
       const link = verificationUrl;
 
       try {
-        await sendMail(subject, send_to, send_from, template, name, link);
+        await sendMail(subject, send_to, send_from, template, link);
       } catch (error) {
         throw new Error("Email not send, please try again");
       }
@@ -226,17 +224,16 @@ exports.loginUser = asyncHandler(async (req, res) => {
     );
 
     // Construct Verification Token
-    const verificationUrl = `${process.env.FRONTEND_URL}/verify/${verificationToken}`;
+    const verificationUrl = `${process.env.FRONTEND_URL}/verification/${verificationToken}`;
 
     // Send verification email
     const subject = "Verify Your Account";
     const send_to = user.rows[0].email;
     const send_from = process.env.EMAIL_USER;
     const template = "verifyEMail";
-    const name = user.rows[0].email;
     const link = verificationUrl;
 
-    await sendMail(subject, send_to, send_from, template, name, link);
+    await sendMail(subject, send_to, send_from, template, link);
 
     res.status(399);
     throw new Error("Account not verified. Check your email for verification.");
@@ -261,11 +258,10 @@ exports.loginUser = asyncHandler(async (req, res) => {
     const send_to = user.rows[0].email;
     const send_from = process.env.EMAIL_USER;
     const template = "noticeAccount";
-    const name = user.rows[0].email;
     const link = text;
 
     try {
-      await sendMail(subject, send_to, send_from, template, name, link);
+      await sendMail(subject, send_to, send_from, template, link);
     } catch (error) {
       res.status(500);
       throw new Error("Email not send, Please try again.");
@@ -283,7 +279,16 @@ exports.loginUser = asyncHandler(async (req, res) => {
   );
 
   if (!findDataPribadi.rows.length) {
-    res.status(300);
+    const {
+      user_id,
+      npm,
+      nidn,
+      username,
+      email,
+      role,
+      isverified,
+      created_at,
+    } = user.rows[0];
     // Send HTTP-only Cookie
     res.cookie("token", token, {
       path: "/",
@@ -292,11 +297,21 @@ exports.loginUser = asyncHandler(async (req, res) => {
       sameSite: "none",
       secure: true,
     });
-
-    throw new Error("Please complete the purchased personal data first.");
-  }
-
-  if (user.rows.length && passwordIsCorrect) {
+    res.status(200).json({
+      message: "Please complete the purchased personal data first.",
+      data: {
+        user_id,
+        npm,
+        nidn,
+        username,
+        email,
+        role,
+        isverified,
+        created_at,
+        token,
+      },
+    });
+  } else if (user.rows.length && passwordIsCorrect) {
     const {
       user_id,
       npm,
@@ -333,6 +348,21 @@ exports.loginUser = asyncHandler(async (req, res) => {
   } else {
     res.status(500);
     throw new Error("Somthing went wrong, Pleas try again.");
+  }
+});
+
+exports.cekDataPribadi = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  const findData = await DB.query(
+    "SELECT * FROM tb_data_pribadi WHERE user_id = $1",
+    [id]
+  );
+
+  if (!findData.rows.length) {
+    return res.json(false);
+  } else {
+    return res.json(true);
   }
 });
 
@@ -383,11 +413,10 @@ exports.sendLoginCode = asyncHandler(async (req, res) => {
   const send_to = email;
   const send_from = process.env.EMAIL_USER;
   const template = "loginCode";
-  const name = user.rows[0].username;
   const link = decryptedLoginCode;
 
   try {
-    await sendMail(subject, send_to, send_from, template, name, link);
+    await sendMail(subject, send_to, send_from, template, link);
 
     res.status(200).json({ message: `Access code sent to ${email}` });
   } catch (error) {
@@ -559,11 +588,10 @@ exports.sendVerificationEmail = asyncHandler(async (req, res) => {
   const send_to = user.rows[0].email;
   const send_from = process.env.EMAIL_USER;
   const template = "verifyEMail";
-  const name = user.rows[0].username;
   const link = verificationUrl;
 
   try {
-    await sendMail(subject, send_to, send_from, template, name, link);
+    await sendMail(subject, send_to, send_from, template, link);
     res.status(200).json({ message: "Verification email sent." });
   } catch (error) {
     throw new Error("Email not send, please try again");
@@ -769,7 +797,6 @@ exports.forgotPassword = asyncHandler(async (req, res) => {
   // Created reset token and save
   const resetToken =
     crypto.randomBytes(32).toString("hex") + user.rows[0].user_id;
-  console.log(resetToken);
 
   // Hashtoken
   const hashedToken = hashToken(resetToken);
@@ -791,10 +818,9 @@ exports.forgotPassword = asyncHandler(async (req, res) => {
   const send_to = user.rows[0].email;
   const send_from = process.env.EMAIL_USER;
   const template = "forgotPassword";
-  const name = user.rows[0].username;
   const link = resetPassUrl;
   try {
-    await sendMail(subject, send_to, send_from, template, name, link);
+    await sendMail(subject, send_to, send_from, template, link);
 
     res.status(200).json({ message: "Password Reset Email Sent" });
   } catch (error) {
@@ -805,6 +831,7 @@ exports.forgotPassword = asyncHandler(async (req, res) => {
 
 exports.resetPassword = asyncHandler(async (req, res) => {
   const { error } = resetPasswordValidation(req.body);
+
   if (error) {
     return res.status(400).send({ message: error.details[0].message });
   }
@@ -876,6 +903,11 @@ exports.changePassword = asyncHandler(async (req, res) => {
     user.rows[0].password
   );
 
+  if (passwordIsCorrect === false) {
+    res.status(400);
+    throw new Error("Old password is incorrect.");
+  }
+
   if (user.rows.length && passwordIsCorrect) {
     // Now change password
     await DB.query("UPDATE tb_users SET password = $1 WHERE user_id = $2", [
@@ -897,9 +929,6 @@ exports.changePassword = asyncHandler(async (req, res) => {
     // res
     //   .status(200)
     //   .json({ message: "Password change successfull, please re-login" });
-  } else {
-    res.status(400);
-    throw new Error("Old password is incorrect.");
   }
 });
 

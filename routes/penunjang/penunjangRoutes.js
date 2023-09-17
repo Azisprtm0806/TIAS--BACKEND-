@@ -7,7 +7,9 @@ const {
   detailDataProfesi,
   editDataProfesi,
   deleteDataProfesi,
-  updateStatusProfesi,
+  filterDataProfesi,
+  approveStatusProfesi,
+  rejectStatusProfesi,
 } = require("../../controllers/penunjang/anggotaProfesiController");
 const {
   addPenghargaan,
@@ -15,7 +17,8 @@ const {
   detailPenghargaan,
   editPenghargaan,
   deletePenghargaan,
-  updateStatusPenghargaan,
+  approveStatusPenghargaan,
+  rejectStatusPenghargaan,
 } = require("../../controllers/penunjang/penghargaanController");
 
 const router = express.Router();
@@ -32,11 +35,18 @@ router.patch(
 );
 router.delete("/deleteProfesi/:profId", protected, deleteDataProfesi);
 router.patch(
-  "/updateStatusProf/:profId",
+  "/approveStatusProf/:profId",
   protected,
   adminOnly,
-  updateStatusProfesi
+  approveStatusProfesi
 );
+router.patch(
+  "/approveStatusProf/:profId",
+  protected,
+  adminOnly,
+  rejectStatusProfesi
+);
+router.get("/filterProfesi", protected, filterDataProfesi);
 // ============= END PROFESI ==================
 
 // ================== Penghargaan ======================
@@ -51,10 +61,16 @@ router.patch(
 );
 router.delete("/deletePenghargaan/:pengId", protected, deletePenghargaan);
 router.patch(
-  "/updateStatusPenghargaan/:pengId",
+  "/approveStatusPenghargaan/:pengId",
   protected,
   adminOnly,
-  updateStatusPenghargaan
+  approveStatusPenghargaan
+);
+router.patch(
+  "/rejectStatusPenghargaan/:pengId",
+  protected,
+  adminOnly,
+  rejectStatusPenghargaan
 );
 // ================== END TES ==================
 

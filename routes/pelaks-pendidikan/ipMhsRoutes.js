@@ -10,8 +10,9 @@ const {
   detailDataIp,
   deleteDataIp,
   editDataIp,
-  updateStatusIp,
   filterDataIp,
+  approveStatusIp,
+  rejectStatusIp,
 } = require("../../controllers/pelaks-pendidikan/ipMhsController");
 
 const router = express.Router();
@@ -22,7 +23,8 @@ router.get("/getDataIp", protected, adminMhsOnly, getDataIP);
 router.get("/detail/:ipId", protected, adminMhsOnly, detailDataIp);
 router.patch("/edit/:ipId", protected, adminMhsOnly, editDataIp);
 router.delete("/delete/:ipId", protected, adminMhsOnly, deleteDataIp);
-router.patch("/updateStatus/:ipId", protected, adminOnly, updateStatusIp);
+router.patch("/approveStatusIp/:ipId", protected, adminOnly, approveStatusIp);
+router.patch("/rejectStatusIp/:ipId", protected, adminOnly, rejectStatusIp);
 router.get("/filterDataIp", protected, filterDataIp);
 // ============= END PENELITIAN =====================
 

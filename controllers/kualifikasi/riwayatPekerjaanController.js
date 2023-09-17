@@ -118,13 +118,13 @@ exports.getDataRiwayatPekerjaan = asyncHandler(async (req, res) => {
   const userLoginId = req.user.user_id;
 
   const findData = await DB.query(
-    "SELECT * FROM tb_riwayat_pekerjaan WHERE user_id = $1 and status = $2 and is_deleted = $3",
-    [userLoginId, 1, false]
+    "SELECT * FROM tb_riwayat_pekerjaan WHERE user_id = $1 and is_deleted = $3",
+    [userLoginId, false]
   );
 
   const jumlahData = await DB.query(
-    "SELECT COUNT(*) FROM tb_riwayat_pekerjaan WHERE user_id = $1 and status = $2 and is_deleted = $3",
-    [userLoginId, 1, false]
+    "SELECT COUNT(*) FROM tb_riwayat_pekerjaan WHERE user_id = $1 and is_deleted = $3",
+    [userLoginId, false]
   );
 
   res.status(201).json({
@@ -236,14 +236,8 @@ exports.deleteDataRiwayatPekerjaan = asyncHandler(async (req, res) => {
   res.status(200).json({ message: "Data deleted successfully." });
 });
 
-exports.editStatusRiwayatPekerjaan = asyncHandler(async (req, res) => {
+exports.approveStatusRiwayatPekerjaan = asyncHandler(async (req, res) => {
   const { rwytId } = req.params;
-  const data = req.body;
-
-  if (!data.status) {
-    res.status(400);
-    throw new Error("Pleas fill in all the required fields.");
-  }
 
   const findData = await DB.query(
     "SELECT * FROM tb_riwayat_pekerjaan WHERE rwyt_pekerjaan_id = $1",
@@ -253,14 +247,38 @@ exports.editStatusRiwayatPekerjaan = asyncHandler(async (req, res) => {
   if (findData.rows.length) {
     const updated_at = unixTimestamp;
     const convert = convertDate(updated_at);
-    const updateStatus = await DB.query(
+    await DB.query(
       `UPDATE tb_riwayat_pekerjaan SET status = $1, updated_at = $2 WHERE rwyt_pekerjaan_id = $3`,
-      [data.status, convert, rwytId]
+      [1, convert, rwytId]
     );
 
     res.status(201).json({
-      message: "Successfully update data.",
-      data: updateStatus.rows[0],
+      message: "Data has been received.",
+    });
+  } else {
+    res.status(404);
+    throw new Error("Data not found.");
+  }
+});
+
+exports.rejectStatusRiwayatPekerjaan = asyncHandler(async (req, res) => {
+  const { rwytId } = req.params;
+
+  const findData = await DB.query(
+    "SELECT * FROM tb_riwayat_pekerjaan WHERE rwyt_pekerjaan_id = $1",
+    [rwytId]
+  );
+
+  if (findData.rows.length) {
+    const updated_at = unixTimestamp;
+    const convert = convertDate(updated_at);
+    await DB.query(
+      `UPDATE tb_riwayat_pekerjaan SET status = $1, updated_at = $2 WHERE rwyt_pekerjaan_id = $3`,
+      [2, convert, rwytId]
+    );
+
+    res.status(201).json({
+      message: "Data has been rejected.",
     });
   } else {
     res.status(404);

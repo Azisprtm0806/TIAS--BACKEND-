@@ -61,7 +61,7 @@ exports.createDataPribadi = asyncHandler(async (req, res) => {
 
   if (findNik.rows.length) {
     res.status(400);
-    throw new Error("NIK already.");
+    throw new Error("NIK already exist.");
   }
 
   if (data.nik.length !== 16) {
@@ -69,9 +69,24 @@ exports.createDataPribadi = asyncHandler(async (req, res) => {
     throw new Error("NIK must be with 16 digits.");
   }
 
+  const findEmail = await DB.query(
+    "SELECT * FROM tb_data_pribadi WHERE email = $1",
+    [data.email]
+  );
+
+  if (findEmail.rows.length) {
+    res.status(400);
+    throw new Error("Email already exist.");
+  }
+
   if (data.no_hp.length > 13 || data.no_hp.length < 10) {
     res.status(400);
     throw new Error("Invalid phone number.");
+  }
+
+  if (data.kode_pos.length != 5) {
+    res.status(400);
+    throw new Error("Invalid Pos Code.");
   }
 
   const findUser = await DB.query("SELECT * FROM tb_users WHERE user_id = $1", [
@@ -152,9 +167,16 @@ exports.editDataPribadi = asyncHandler(async (req, res) => {
   );
 
   if (dataPribadi.rows.length) {
+    const data = req.body;
+
+    if (data.jenkel == "") {
+      res.status(300);
+      throw new Error("Invalid input jenis kelamin.");
+    }
+
     const updated_at = unixTimestamp;
     const convert = convertDate(updated_at);
-    const entries = Object.entries({ ...req.body, updated_at: convert });
+    const entries = Object.entries({ ...data, updated_at: convert });
     const setQuery = entries
       .map(([key, _], index) => `${key} = $${index + 1}`)
       .join(", ");
@@ -242,9 +264,10 @@ exports.updateProfileImage = asyncHandler(async (req, res) => {
     throw new Error("Data not found.");
   }
 
-  const removeImage = await fs.remove(
-    path.join(`public/foto-profile/${findData.rows[0].image}`)
-  );
+  if (findData.rows[0].image != "user.png") {
+    await fs.remove(path.join(`public/foto-profile/${findData.rows[0].image}`));
+  }
+
   const updated_at = unixTimestamp;
   const convert = convertDate(updated_at);
 

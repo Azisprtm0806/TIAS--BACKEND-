@@ -75,18 +75,18 @@ exports.addPenghargaan = asyncHandler(async (req, res) => {
 exports.getPenghargaan = asyncHandler(async (req, res) => {
   const userLoginId = req.user.user_id;
 
-  const query = `SELECT tb_penghargaan.*, kategori_prestasi.nama_kategori, kategori_prestasi.juara, kategori_prestasi.point FROM tb_penghargaan JOIN kategori_prestasi ON tb_penghargaan.kategori_id=kategori_prestasi.id WHERE tb_penghargaan.user_id = '${userLoginId}' and status = 1 and is_deleted = ${false}`;
+  const query = `SELECT tb_penghargaan.*, kategori_prestasi.nama_kategori, kategori_prestasi.juara, kategori_prestasi.point FROM tb_penghargaan JOIN kategori_prestasi ON tb_penghargaan.kategori_id=kategori_prestasi.id WHERE tb_penghargaan.user_id = '${userLoginId}' and is_deleted = ${false}`;
 
   const dataPenghargaan = await DB.query(query);
 
   const jumlahData = await DB.query(
-    "SELECT COUNT(*) FROM tb_penghargaan WHERE user_id = $1 and status = $2 and is_deleted = $3",
-    [userLoginId, 1, false]
+    "SELECT COUNT(*) FROM tb_penghargaan WHERE user_id = $1 and is_deleted = $2",
+    [userLoginId, false]
   );
 
   res.status(201).json({
     data: dataPenghargaan.rows,
-    jumlahData: jumlahData.rows[0].count,
+    totalData: jumlahData.rows[0].count,
   });
 });
 
@@ -191,7 +191,11 @@ exports.deletePenghargaan = asyncHandler(async (req, res) => {
     [true, convert, findData.rows[0].penghargaan_id]
   );
 
-  if (deleteData.rows.length) {
+  if (deleteData.rows[0].status == 0 || deleteData.rows[0].status == 1) {
+    res.status(200).json({ message: "Data deleted successfully." });
+  } else {
+  }
+  {
     const data = await DB.query(
       "SELECT tb_penghargaan.*, kategori_prestasi.nama_kategori, kategori_prestasi.juara, kategori_prestasi.point FROM tb_penghargaan NATURAL JOIN kategori_prestasi WHERE id = $1",
       [deleteData.rows[0].kategori_id]
@@ -204,19 +208,12 @@ exports.deletePenghargaan = asyncHandler(async (req, res) => {
       "UPDATE tb_data_pribadi SET point_penunjang = point_penunjang - $1 WHERE user_id = $2",
       [point, userId]
     );
+    res.status(200).json({ message: "Data deleted successfully." });
   }
-
-  res.status(200).json({ message: "Data deleted successfully." });
 });
 
-exports.updateStatusPenghargaan = asyncHandler(async (req, res) => {
+exports.approveStatusPenghargaan = asyncHandler(async (req, res) => {
   const { pengId } = req.params;
-  const data = req.body;
-
-  if (!data.status) {
-    res.status(400);
-    throw new Error("Pleas fill in all the required fields.");
-  }
 
   const findData = await DB.query(
     "SELECT * FROM tb_penghargaan WHERE penghargaan_id = $1",
@@ -228,27 +225,49 @@ exports.updateStatusPenghargaan = asyncHandler(async (req, res) => {
     const convert = convertDate(updated_at);
     const updateStatus = await DB.query(
       `UPDATE tb_penghargaan SET status = $1, updated_at = $2 WHERE penghargaan_id = $3 returning *`,
-      [data.status, convert, pengId]
+      [1, convert, pengId]
     );
 
-    if (updateStatus.rows[0].status === 1) {
-      const data = await DB.query(
-        "SELECT tb_penghargaan.*, kategori_prestasi.nama_kategori, kategori_prestasi.juara, kategori_prestasi.point FROM tb_penghargaan NATURAL JOIN kategori_prestasi WHERE id = $1",
-        [updateStatus.rows[0].kategori_id]
-      );
+    const data = await DB.query(
+      "SELECT tb_penghargaan.*, kategori_prestasi.nama_kategori, kategori_prestasi.juara, kategori_prestasi.point FROM tb_penghargaan NATURAL JOIN kategori_prestasi WHERE id = $1",
+      [updateStatus.rows[0].kategori_id]
+    );
 
-      const point = data.rows[0].point;
-      const userId = data.rows[0].user_id;
+    const point = data.rows[0].point;
+    const userId = data.rows[0].user_id;
 
-      await DB.query(
-        "UPDATE tb_data_pribadi SET point_penunjang = point_penunjang + $1 WHERE user_id = $2",
-        [point, userId]
-      );
-    }
+    await DB.query(
+      "UPDATE tb_data_pribadi SET point_penunjang = point_penunjang + $1 WHERE user_id = $2",
+      [point, userId]
+    );
 
     res.status(201).json({
-      message: "Successfully update data.",
-      data: updateStatus.rows[0],
+      message: "Data has been received.",
+    });
+  } else {
+    res.status(404);
+    throw new Error("Data not found.");
+  }
+});
+
+exports.rejectStatusPenghargaan = asyncHandler(async (req, res) => {
+  const { pengId } = req.params;
+
+  const findData = await DB.query(
+    "SELECT * FROM tb_penghargaan WHERE penghargaan_id = $1",
+    [pengId]
+  );
+
+  if (findData.rows.length) {
+    const updated_at = unixTimestamp;
+    const convert = convertDate(updated_at);
+    const updateStatus = await DB.query(
+      `UPDATE tb_penghargaan SET status = $1, updated_at = $2 WHERE penghargaan_id = $3 returning *`,
+      [2, convert, pengId]
+    );
+
+    res.status(201).json({
+      message: "Data has been rejected.",
     });
   } else {
     res.status(404);

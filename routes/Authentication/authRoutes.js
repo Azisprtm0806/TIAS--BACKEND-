@@ -16,6 +16,7 @@ const {
   deleteExpired,
   getAllUsers,
   sendAutomatedEmail,
+  cekDataPribadi,
 } = require("../../controllers/Authentication/authController");
 const { protected, adminOnly } = require("../../middleware/authMiddleware");
 
@@ -23,6 +24,7 @@ const router = express.Router();
 
 router.post("/register", register);
 router.post("/login", loginUser);
+router.get("/cekDataPribadi/:id", cekDataPribadi);
 router.post("/sendLoginCode/:email", sendLoginCode);
 router.post("/loginWithCode/:email", loginWithCode);
 

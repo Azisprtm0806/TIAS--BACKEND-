@@ -106,8 +106,8 @@ exports.getDataKepangkatan = asyncHandler(async (req, res) => {
   const userLoginId = req.user.user_id;
 
   const dataKepangkatan = await DB.query(
-    "SELECT * FROM tb_kepangkatan_dosen WHERE user_id = $1 and status = $2",
-    [userLoginId, 1]
+    "SELECT * FROM tb_kepangkatan_dosen WHERE user_id = $1",
+    [userLoginId]
   );
 
   res.status(201).json({
@@ -259,14 +259,8 @@ exports.deleteDataKepangkatan = asyncHandler(async (req, res) => {
   res.status(200).json({ message: "Data deleted successfully." });
 });
 
-exports.updateStatusKepangkatan = asyncHandler(async (req, res) => {
+exports.approveStatusKepangkatan = asyncHandler(async (req, res) => {
   const { pangkatId } = req.params;
-  const data = req.body;
-
-  if (!data.status) {
-    res.status(400);
-    throw new Error("Pleas fill in all the required fields.");
-  }
 
   const findData = await DB.query(
     "SELECT * FROM tb_kepangkatan_dosen WHERE pangkat_id = $1",
@@ -278,11 +272,37 @@ exports.updateStatusKepangkatan = asyncHandler(async (req, res) => {
     const convert = convertDate(updated_at);
     const updateStatus = await DB.query(
       `UPDATE tb_kepangkatan_dosen SET status = $1, updated_at = $2 WHERE pangkat_id = $3 returning *`,
-      [data.status, convert, pangkatId]
+      [1, convert, pangkatId]
     );
 
     res.status(201).json({
-      message: "Successfully update data.",
+      message: "Data has been received.",
+      data: updateStatus.rows[0],
+    });
+  } else {
+    res.status(404);
+    throw new Error("Data not found.");
+  }
+});
+
+exports.rejectStatusKepangkatan = asyncHandler(async (req, res) => {
+  const { pangkatId } = req.params;
+
+  const findData = await DB.query(
+    "SELECT * FROM tb_kepangkatan_dosen WHERE pangkat_id = $1",
+    [pangkatId]
+  );
+
+  if (findData.rows.length) {
+    const updated_at = unixTimestamp;
+    const convert = convertDate(updated_at);
+    const updateStatus = await DB.query(
+      `UPDATE tb_kepangkatan_dosen SET status = $1, updated_at = $2 WHERE pangkat_id = $3 returning *`,
+      [2, convert, pangkatId]
+    );
+
+    res.status(201).json({
+      message: "Data has been rejected.",
       data: updateStatus.rows[0],
     });
   } else {

@@ -70,13 +70,13 @@ exports.getAllDataProfesi = asyncHandler(async (req, res) => {
   const userLoginId = req.user.user_id;
 
   const dataProf = await DB.query(
-    "SELECT * FROM tb_anggota_prof WHERE user_id = $1 and status = $2 and is_deleted = $3",
-    [userLoginId, 1, false]
+    "SELECT * FROM tb_anggota_prof WHERE user_id = $1 and is_deleted = $3",
+    [userLoginId, false]
   );
 
   const jumlahData = await DB.query(
-    "SELECT COUNT(*) FROM tb_anggota_prof WHERE user_id = $1 and status = $2 and is_deleted = $3",
-    [userLoginId, 1, false]
+    "SELECT COUNT(*) FROM tb_anggota_prof WHERE user_id = $1 and is_deleted = $3",
+    [userLoginId, false]
   );
 
   res.status(201).json({
@@ -189,14 +189,8 @@ exports.deleteDataProfesi = asyncHandler(async (req, res) => {
   res.status(200).json({ message: "Data deleted successfully." });
 });
 
-exports.updateStatusProfesi = asyncHandler(async (req, res) => {
+exports.approveStatusProfesi = asyncHandler(async (req, res) => {
   const { profId } = req.params;
-  const data = req.body;
-
-  if (!data.status) {
-    res.status(400);
-    throw new Error("Pleas fill in all the required fields.");
-  }
 
   const findData = await DB.query(
     "SELECT * FROM tb_anggota_prof WHERE prof_id = $1",
@@ -206,17 +200,58 @@ exports.updateStatusProfesi = asyncHandler(async (req, res) => {
   if (findData.rows.length) {
     const updated_at = unixTimestamp;
     const convert = convertDate(updated_at);
-    const updateStatus = await DB.query(
+    await DB.query(
       `UPDATE tb_anggota_prof SET status = $1, updated_at = $2 WHERE prof_id = $3`,
-      [data.status, convert, profId]
+      [1, convert, profId]
     );
 
     res.status(201).json({
-      message: "Successfully update data.",
-      data: updateStatus.rows[0],
+      message: "Data has been received.",
     });
   } else {
     res.status(404);
     throw new Error("Data not found.");
   }
+});
+
+exports.rejectStatusProfesi = asyncHandler(async (req, res) => {
+  const { profId } = req.params;
+
+  const findData = await DB.query(
+    "SELECT * FROM tb_anggota_prof WHERE prof_id = $1",
+    [profId]
+  );
+
+  if (findData.rows.length) {
+    const updated_at = unixTimestamp;
+    const convert = convertDate(updated_at);
+    await DB.query(
+      `UPDATE tb_anggota_prof SET status = $1, updated_at = $2 WHERE prof_id = $3`,
+      [2, convert, profId]
+    );
+
+    res.status(201).json({
+      message: "Data has been rejected.",
+    });
+  } else {
+    res.status(404);
+    throw new Error("Data not found.");
+  }
+});
+
+exports.filterDataProfesi = asyncHandler(async (req, res) => {
+  const userLoginId = req.user.user_id;
+  const data = req.body;
+
+  const nama_organisasi = data.nama_organisasi || null;
+  const peran = data.peran || null;
+
+  const findData = await DB.query(
+    `SELECT * FROM filter_anggota_profesi($1, $2, $3)`,
+    [nama_organisasi, peran, userLoginId]
+  );
+
+  res.status(201).json({
+    data: findData.rows,
+  });
 });

@@ -150,13 +150,13 @@ exports.getDataBahanAjar = asyncHandler(async (req, res) => {
   const userLoginId = req.user.user_id;
 
   const dataBahanAjar = await DB.query(
-    "SELECT * FROM tb_bahan_ajar_dosen WHERE user_id = $1 and status = $2",
-    [userLoginId, 1]
+    "SELECT * FROM tb_bahan_ajar_dosen WHERE user_id = $1",
+    [userLoginId]
   );
 
   const jumlahData = await DB.query(
-    "SELECT COUNT(*) FROM tb_bahan_ajar_dosen WHERE user_id = $1 and status = $2",
-    [userLoginId, 1]
+    "SELECT COUNT(*) FROM tb_bahan_ajar_dosen WHERE user_id = $1",
+    [userLoginId]
   );
 
   res.status(201).json({
@@ -383,14 +383,8 @@ exports.deleteDataBahanAjar = asyncHandler(async (req, res) => {
   res.status(200).json({ message: "Data deleted successfully." });
 });
 
-exports.updateStatusBahanAjar = asyncHandler(async (req, res) => {
+exports.approveStatusBahanAjar = asyncHandler(async (req, res) => {
   const { bahanAjarId } = req.params;
-  const data = req.body;
-
-  if (!data.status) {
-    res.status(400);
-    throw new Error("Pleas fill in all the required fields.");
-  }
 
   const findData = await DB.query(
     "SELECT * FROM tb_bahan_ajar_dosen WHERE bahan_ajar_id = $1",
@@ -400,14 +394,38 @@ exports.updateStatusBahanAjar = asyncHandler(async (req, res) => {
   if (findData.rows.length) {
     const updated_at = unixTimestamp;
     const convert = convertDate(updated_at);
-    const updateStatus = await DB.query(
+    await DB.query(
       `UPDATE tb_bahan_ajar_dosen SET status = $1, updated_at = $2 WHERE bahan_ajar_id = $3`,
-      [data.status, convert, bahanAjarId]
+      [1, convert, bahanAjarId]
     );
 
     res.status(201).json({
-      message: "Successfully update data.",
-      data: updateStatus.rows[0],
+      message: "Data has been received.",
+    });
+  } else {
+    res.status(404);
+    throw new Error("Data not found.");
+  }
+});
+
+exports.rejectStatusBahanAjar = asyncHandler(async (req, res) => {
+  const { bahanAjarId } = req.params;
+
+  const findData = await DB.query(
+    "SELECT * FROM tb_bahan_ajar_dosen WHERE bahan_ajar_id = $1",
+    [bahanAjarId]
+  );
+
+  if (findData.rows.length) {
+    const updated_at = unixTimestamp;
+    const convert = convertDate(updated_at);
+    await DB.query(
+      `UPDATE tb_bahan_ajar_dosen SET status = $1, updated_at = $2 WHERE bahan_ajar_id = $3`,
+      [2, convert, bahanAjarId]
+    );
+
+    res.status(201).json({
+      message: "Data has been rejected.",
     });
   } else {
     res.status(404);

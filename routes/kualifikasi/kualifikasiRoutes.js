@@ -9,6 +9,8 @@ const {
   deleteDataRiwayatPekerjaan,
   editStatusRiwayatPekerjaan,
   filterDataRiwayatPekerjaan,
+  approveStatusRiwayatPekerjaan,
+  rejectStatusRiwayatPekerjaan,
 } = require("../../controllers/kualifikasi/riwayatPekerjaanController");
 const {
   detailDataPendidikan,
@@ -18,6 +20,8 @@ const {
   getDataPendidikan,
   editStatusPendidikan,
   filterDataPendidikan,
+  approveStatusPendidikan,
+  rejectStatusPendidikan,
 } = require("../../controllers/kualifikasi/pendidikanController");
 const router = express.Router();
 
@@ -46,10 +50,16 @@ router.delete(
   deleteDataRiwayatPekerjaan
 );
 router.patch(
-  "/updateStatusRwyt/:rwytId",
+  "/approveStatusRwyt/:rwytId",
   protected,
   adminOnly,
-  editStatusRiwayatPekerjaan
+  approveStatusRiwayatPekerjaan
+);
+router.patch(
+  "/rejectStatusRwyt/:rwytId",
+  protected,
+  adminOnly,
+  rejectStatusRiwayatPekerjaan
 );
 router.get("/filterRiwayatPekerjaan", protected, filterDataRiwayatPekerjaan);
 // ============= END RIWAYAT PEKERJAAN ==================
@@ -66,10 +76,16 @@ router.patch(
 );
 router.delete("/deletePend/:pendId", protected, deleteDataPendidikan);
 router.patch(
-  "/updateStatusPend/:pendId",
+  "/approveStatusRwyt/:rwytId",
   protected,
   adminOnly,
-  editStatusPendidikan
+  approveStatusPendidikan
+);
+router.patch(
+  "/rejectStatusRwyt/:rwytId",
+  protected,
+  adminOnly,
+  rejectStatusPendidikan
 );
 router.get("/filterPend", protected, filterDataPendidikan);
 // ================== END PENDIDIKAN FORMAL ==================

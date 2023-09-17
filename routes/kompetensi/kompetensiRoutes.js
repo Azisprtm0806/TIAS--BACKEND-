@@ -7,8 +7,9 @@ const {
   detailDataSerti,
   editDataSerti,
   deleteDataSerti,
-  editStatusSerti,
   filterDataSertifikasi,
+  approveStatusSerti,
+  rejectStatusSerti,
 } = require("../../controllers/kompetensi/sertifikasiController");
 const {
   createDataTes,
@@ -18,6 +19,8 @@ const {
   deleteTes,
   editStatusTes,
   filterDataTes,
+  approveStatusTes,
+  rejectStatusTes,
 } = require("../../controllers/kompetensi/tesController");
 const router = express.Router();
 
@@ -33,10 +36,16 @@ router.patch(
 );
 router.delete("/deleteCertif/:certifId", protected, deleteDataSerti);
 router.patch(
-  "/updateStatusCertif/:certifId",
+  "/approveStatusCertif/:certifId",
   protected,
   adminOnly,
-  editStatusSerti
+  approveStatusSerti
+);
+router.patch(
+  "/rejectStatusCertif/:certifId",
+  protected,
+  adminOnly,
+  rejectStatusSerti
 );
 router.get("/filterCertif", protected, filterDataSertifikasi);
 // ============= END SERTIFIKAT ==================
@@ -47,7 +56,13 @@ router.get("/getTes", protected, getDataTes);
 router.get("/detailTes/:tesId", protected, detailDataTes);
 router.patch("/editTes/:tesId", protected, kompetensiUpload, editDataTes);
 router.delete("/deleteTes/:tesId", protected, deleteTes);
-router.patch("/updateStatusTes/:tesId", protected, adminOnly, editStatusTes);
+router.patch(
+  "/approveStatusTes/:tesId",
+  protected,
+  adminOnly,
+  approveStatusTes
+);
+router.patch("/rejectStatusTes/:tesId", protected, adminOnly, rejectStatusTes);
 router.get("/filterTes", protected, filterDataTes);
 // ================== END TES ==================
 

@@ -145,13 +145,13 @@ exports.addDataPublikasi = asyncHandler(async (req, res) => {
 exports.getDataPublikasi = asyncHandler(async (req, res) => {
   const userLoginId = req.user.user_id;
 
-  const query = `SELECT tb_publikasi_karya.*, kategori_publikasi.nama_kategori, kategori_publikasi.tingkatan, kategori_publikasi.point FROM tb_publikasi_karya JOIN kategori_publikasi ON tb_publikasi_karya.kategori_id=kategori_publikasi.id WHERE tb_publikasi_karya.user_id = '${userLoginId}' and status = 1 and is_deleted = ${false}`;
+  const query = `SELECT tb_publikasi_karya.*, kategori_publikasi.nama_kategori, kategori_publikasi.tingkatan, kategori_publikasi.point FROM tb_publikasi_karya JOIN kategori_publikasi ON tb_publikasi_karya.kategori_id=kategori_publikasi.id WHERE tb_publikasi_karya.user_id = '${userLoginId}' and is_deleted = ${false}`;
 
   const dataPublikasi = await DB.query(query);
 
   const jumlahData = await DB.query(
-    "SELECT COUNT(*) FROM tb_publikasi_karya WHERE user_id = $1 and status = $2 and is_deleted = $3",
-    [userLoginId, 1, false]
+    "SELECT COUNT(*) FROM tb_publikasi_karya WHERE user_id = $1  and is_deleted = $2",
+    [userLoginId, false]
   );
 
   res.status(201).json({
@@ -221,7 +221,7 @@ exports.editDataPublikasi = asyncHandler(async (req, res) => {
       tgl_terbit: data.tgl_terbit,
       penerbit: data.penerbit,
       tautan_eksternal: data.tautan_eksternal,
-      keterangan: data.keterangan_publikasi,
+      keterangan: data.keterangan,
       status: data.status,
     };
 
@@ -273,13 +273,13 @@ exports.editDataPublikasi = asyncHandler(async (req, res) => {
     // END PENULIS PUBLIKASI
 
     // Add Dokumen
-    if (data.nama_dok || data.keterangan || data.tautan_dok || file) {
+    if (data.nama_dok || data.keterangan_dok || data.tautan_dok || file) {
       if (!file) {
         res.status(400);
         throw new Error("Please fill in one file.");
       }
 
-      if (!data.nama_dok || !data.keterangan) {
+      if (!data.nama_dok || !data.keterangan_dok) {
         fs.unlink(file.path, (err) => {
           if (err) {
             console.log(err);
@@ -304,7 +304,7 @@ exports.editDataPublikasi = asyncHandler(async (req, res) => {
 
       const dokumen = {
         nama_dok: data.nama_dok,
-        keterangan: data.keterangan,
+        keterangan_dok: data.keterangan_dok,
         tautan_dok: data.tautan_dok,
       };
 
@@ -369,7 +369,12 @@ exports.deleteDataPublikasi = asyncHandler(async (req, res) => {
     [true, convert, publikasiId]
   );
 
-  if (deletePublikasi.rows.length) {
+  if (
+    deletePublikasi.rows[0].status == 0 ||
+    deletePublikasi.rows[0].status == 2
+  ) {
+    res.status(200).json({ message: "Data deleted successfully." });
+  } else {
     const data = await DB.query(
       "SELECT tb_publikasi_karya.*, kategori_publikasi.nama_kategori, kategori_publikasi.tingkatan, kategori_publikasi.point FROM tb_publikasi_karya NATURAL JOIN kategori_publikasi WHERE id = $1",
       [deletePublikasi.rows[0].kategori_id]
@@ -379,22 +384,14 @@ exports.deleteDataPublikasi = asyncHandler(async (req, res) => {
     const userId = data.rows[0].user_id;
 
     await DB.query(
-      "UPDATE tb_data_pribadi SET point_penelitian = point_penelitian - $1 WHERE user_id = $2",
-      [point, userId]
+      `UPDATE tb_data_pribadi SET point_penelitian = point_penelitian - ${point} WHERE user_id = '${userId}'`
     );
+    res.status(200).json({ message: "Data deleted successfully." });
   }
-
-  res.status(200).json({ message: "Data deleted successfully." });
 });
 
-exports.updateStatusPublikasi = asyncHandler(async (req, res) => {
+exports.approveStatusPublikasi = asyncHandler(async (req, res) => {
   const { publikasiId } = req.params;
-  const data = req.body;
-
-  if (!data.status) {
-    res.status(400);
-    throw new Error("Pleas fill in all the required fields.");
-  }
 
   const findData = await DB.query(
     "SELECT * FROM tb_publikasi_karya WHERE publikasi_id = $1",
@@ -406,27 +403,48 @@ exports.updateStatusPublikasi = asyncHandler(async (req, res) => {
     const convert = convertDate(updated_at);
     const updateStatus = await DB.query(
       `UPDATE tb_publikasi_karya SET status = $1, updated_at = $2 WHERE publikasi_id = $3 returning *`,
-      [data.status, convert, publikasiId]
+      [1, convert, publikasiId]
     );
 
-    if (updateStatus.rows[0].status === 1) {
-      const data = await DB.query(
-        "SELECT tb_publikasi_karya.*, kategori_publikasi.nama_kategori, kategori_publikasi.tingkatan, kategori_publikasi.point FROM tb_publikasi_karya NATURAL JOIN kategori_publikasi WHERE id = $1",
-        [updateStatus.rows[0].kategori_id]
-      );
+    const data = await DB.query(
+      "SELECT tb_publikasi_karya.*, kategori_publikasi.nama_kategori, kategori_publikasi.tingkatan, kategori_publikasi.point FROM tb_publikasi_karya NATURAL JOIN kategori_publikasi WHERE id = $1",
+      [updateStatus.rows[0].kategori_id]
+    );
 
-      const point = data.rows[0].point;
-      const userId = data.rows[0].user_id;
+    const point = data.rows[0].point;
+    const userId = data.rows[0].user_id;
 
-      await DB.query(
-        "UPDATE tb_data_pribadi SET point_penelitian = point_penelitian + $1 WHERE user_id = $2",
-        [point, userId]
-      );
-    }
+    await DB.query(
+      `UPDATE tb_data_pribadi SET point_penelitian = point_penelitian + ${point} WHERE user_id = '${userId}'`
+    );
 
     res.status(201).json({
-      message: "Successfully update data.",
-      data: updateStatus.rows[0],
+      message: "Data has been received.",
+    });
+  } else {
+    res.status(404);
+    throw new Error("Data not found.");
+  }
+});
+
+exports.rejectStatusPublikasi = asyncHandler(async (req, res) => {
+  const { publikasiId } = req.params;
+
+  const findData = await DB.query(
+    "SELECT * FROM tb_publikasi_karya WHERE publikasi_id = $1",
+    [publikasiId]
+  );
+
+  if (findData.rows.length) {
+    const updated_at = unixTimestamp;
+    const convert = convertDate(updated_at);
+    await DB.query(
+      `UPDATE tb_publikasi_karya SET status = $1, updated_at = $2 WHERE publikasi_id = $3 returning *`,
+      [2, convert, publikasiId]
+    );
+
+    res.status(201).json({
+      message: "Data has been rejected.",
     });
   } else {
     res.status(404);
@@ -478,7 +496,7 @@ exports.addDokumenPublikasi = asyncHandler(async (req, res) => {
     throw new Error("Data Publikasi not found.");
   }
 
-  if (!data.nama_dok || !data.keterangan) {
+  if (!data.nama_dok || !data.keterangan_dok) {
     fs.unlink(file.path, (err) => {
       if (err) {
         console.log(err);

@@ -10,7 +10,8 @@ const {
   getDataBimbingan,
   editDataBimbingan,
   deleteDataBimbingan,
-  updateStatusBimbingan,
+  approveStatusBimbingan,
+  rejectStatusBimbingan,
 } = require("../../controllers/pelaks-pendidikan/bimbinganController");
 
 const router = express.Router();
@@ -38,12 +39,18 @@ router.delete(
   deleteDataBimbingan
 );
 router.patch(
-  "/updateStatus/:bimbinganId",
+  "/approveStatus/:bimbinganId",
   protected,
   adminOnly,
-  updateStatusBimbingan
+  approveStatusBimbingan
 );
 
+router.patch(
+  "/rejectStatus/:bimbinganId",
+  protected,
+  adminOnly,
+  rejectStatusBimbingan
+);
 // ============= END PENELITIAN =====================
 
 module.exports = router;
