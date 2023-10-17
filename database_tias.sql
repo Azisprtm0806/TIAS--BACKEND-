@@ -143,6 +143,7 @@ CREATE TABLE tb_sertifikasi (
 CREATE TABLE tb_tes(
 	tes_id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
 	user_id uuid NOT NULL, CONSTRAINT fk_tb_tes FOREIGN KEY (user_id) REFERENCES tb_users (user_id),
+	kategori_id uuid NOT NULL, CONSTRAINT fk_tb_kategori FOREIGN KEY (kategori_id) REFERENCES kategori_sertifikasi (id),
 	nama_tes varchar(255) NOT NULL,
 	jenis_tes varchar(255)NOT NULL,
 	penyelenggara varchar(255) NOT NULL,
@@ -215,6 +216,15 @@ CREATE TABLE tb_dokumen (
 	updated_at TIMESTAMP,
 	deleted_at TIMESTAMP
 )
+
+
+CREATE TABLE kategori_profesi(
+	id uuid DEFAULT uuid_generate_v4() PRIMARY KEY NOT NULL,
+	kode varchar(25) NOT NULL, ([LK, Lokal], [RG, Regional], [NL, Nasional], [IL, Internasional])
+	nama_kategori varchar(120) NOT NULL, 
+	point INT NOT NULL
+)
+
 
 CREATE TABLE tb_anggota_prof (
 	prof_id uuid DEFAULT uuid_generate_v4 () PRIMARY KEY NOT NULL,

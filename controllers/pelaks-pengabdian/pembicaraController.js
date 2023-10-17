@@ -22,6 +22,7 @@ exports.addDataPembicara = asyncHandler(async (req, res) => {
     }
 
     if (
+      !data.kategori_id ||
       !data.kategori_pembicara ||
       !data.judul_makalah ||
       !data.nama_pertemuan ||
@@ -42,6 +43,7 @@ exports.addDataPembicara = asyncHandler(async (req, res) => {
     }
 
     const dataPembicara = {
+      kategori_id: data.kategori_id,
       kategori_pembicara: data.kategori_pembicara,
       judul_makalah: data.judul_makalah,
       nama_pertemuan: data.nama_pertemuan,
@@ -135,9 +137,15 @@ exports.getDataPembicara = asyncHandler(async (req, res) => {
     [userLoginId, false]
   );
 
+  const jumlahDataAcc = await DB.query(
+    "SELECT COUNT(*) FROM tb_pembicara WHERE user_id = $1 and status = $2  and is_deleted = $3",
+    [userLoginId, 1, false]
+  );
+
   res.status(201).json({
     data: findData.rows,
     totalData: jumlahData.rows[0].count,
+    totalDataAcc: jumlahDataAcc.rows[0].count,
   });
 });
 
@@ -183,12 +191,30 @@ exports.deleteDataPembicara = asyncHandler(async (req, res) => {
   const created_at = unixTimestamp;
   const convert = convertDate(created_at);
 
-  await DB.query(
-    "UPDATE tb_pembicara SET is_deleted = $1, deleted_at = $2 WHERE pembicara_id = $3",
+  const deletePembicara = await DB.query(
+    "UPDATE tb_pembicara SET is_deleted = $1, deleted_at = $2 WHERE pembicara_id = $3 returning *",
     [true, convert, pembicaraId]
   );
 
-  res.status(200).json({ message: "Data deleted successfully." });
+  if (
+    deletePembicara.rows[0].status == 0 ||
+    deletePembicara.rows[0].status == 2
+  ) {
+    res.status(200).json({ message: "Data deleted successfully." });
+  } else {
+    const data = await DB.query(
+      "SELECT tb_pembicara.*, kategori_publikasi.nama_kategori, kategori_publikasi.tingkatan, kategori_publikasi.point FROM tb_pembicara NATURAL JOIN kategori_publikasi WHERE id = $1",
+      [deletePembicara.rows[0].kategori_id]
+    );
+
+    const point = data.rows[0].point;
+    const userId = data.rows[0].user_id;
+
+    await DB.query(
+      `UPDATE tb_data_pribadi SET point_pengabdian = point_pengabdian - ${point} WHERE user_id = '${userId}'`
+    );
+    res.status(200).json({ message: "Data deleted successfully." });
+  }
 });
 
 exports.editDataPembicara = asyncHandler(async (req, res) => {
@@ -216,6 +242,7 @@ exports.editDataPembicara = asyncHandler(async (req, res) => {
     }
 
     const dataPembicara = {
+      kategori_id: data.kategori_id,
       kategori_pembicara: data.kategori_pembicara,
       judul_makalah: data.judul_makalah,
       nama_pertemuan: data.nama_pertemuan,
@@ -318,9 +345,21 @@ exports.approveStatusPembicara = asyncHandler(async (req, res) => {
   if (findData.rows.length) {
     const updated_at = unixTimestamp;
     const convert = convertDate(updated_at);
-    await DB.query(
-      `UPDATE tb_pembicara SET status = $1, updated_at = $2 WHERE pembicara_id = $3`,
+    const updateStatus = await DB.query(
+      `UPDATE tb_pembicara SET status = $1, updated_at = $2 WHERE pembicara_id = $3 returning *`,
       [1, convert, pembicaraId]
+    );
+
+    const data = await DB.query(
+      "SELECT tb_pembicara.*, kategori_publikasi.nama_kategori, kategori_publikasi.tingkatan, kategori_publikasi.point FROM tb_pembicara NATURAL JOIN kategori_publikasi WHERE id = $1",
+      [updateStatus.rows[0].kategori_id]
+    );
+
+    const point = data.rows[0].point;
+    const userId = data.rows[0].user_id;
+
+    await DB.query(
+      `UPDATE tb_data_pribadi SET point_pengabdian = point_pengabdian + ${point} WHERE user_id = '${userId}'`
     );
 
     res.status(201).json({

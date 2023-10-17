@@ -32,3 +32,11 @@ exports.getKategoriHki = asyncHandler(async (req, res) => {
     data: data.rows,
   });
 });
+
+exports.getKategoriProf = asyncHandler(async (req, res) => {
+  const data = await DB.query("SELECT * FROM kategori_profesi");
+
+  res.status(201).json({
+    data: data.rows,
+  });
+});

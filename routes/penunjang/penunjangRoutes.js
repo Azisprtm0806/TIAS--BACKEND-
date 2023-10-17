@@ -41,7 +41,7 @@ router.patch(
   approveStatusProfesi
 );
 router.patch(
-  "/approveStatusProf/:profId",
+  "/rejectStatusProf/:profId",
   protected,
   adminOnly,
   rejectStatusProfesi

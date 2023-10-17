@@ -22,6 +22,7 @@ exports.addDataPenelitian = asyncHandler(async (req, res) => {
     }
 
     if (
+      !data.kategori_id ||
       !data.judul_kegiatan ||
       !data.lokasi_kegiatan ||
       !data.tahun_usulan ||
@@ -43,6 +44,7 @@ exports.addDataPenelitian = asyncHandler(async (req, res) => {
     }
     // ==============PENELITIAN===================
     const penelitian = {
+      kategori_id: data.kategori_id,
       judul_kegiatan: data.judul_kegiatan,
       kelompok_bidang: data.kelompok_bidang,
       lokasi_kegiatan: data.lokasi_kegiatan,
@@ -241,6 +243,7 @@ exports.editDataPenelitian = asyncHandler(async (req, res) => {
     }
 
     const dataPenelitian = {
+      kategori_id: data.kategori_id,
       judul_kegiatan: data.judul_kegiatan,
       kelompok_bidang: data.kelompok_bidang,
       lokasi_kegiatan: data.lokasi_kegiatan,
@@ -396,12 +399,30 @@ exports.deleteDataPenelitian = asyncHandler(async (req, res) => {
   const created_at = unixTimestamp;
   const convert = convertDate(created_at);
 
-  await DB.query(
-    "UPDATE tb_penelitian SET is_deleted = $1, deleted_at = $2 WHERE penelitian_id = $3",
+  const deletePenelitian = await DB.query(
+    "UPDATE tb_penelitian SET is_deleted = $1, deleted_at = $2 WHERE penelitian_id = $3 returning *",
     [true, convert, penelitianId]
   );
 
-  res.status(200).json({ message: "Data deleted successfully." });
+  if (
+    deletePenelitian.rows[0].status == 0 ||
+    deletePenelitian.rows[0].status == 2
+  ) {
+    res.status(200).json({ message: "Data deleted successfully." });
+  } else {
+    const data = await DB.query(
+      "SELECT tb_penelitian.*, kategori_publikasi.nama_kategori, kategori_publikasi.tingkatan, kategori_publikasi.point FROM tb_penelitian NATURAL JOIN kategori_publikasi WHERE id = $1",
+      [deletePenelitian.rows[0].kategori_id]
+    );
+
+    const point = data.rows[0].point;
+    const userId = data.rows[0].user_id;
+
+    await DB.query(
+      `UPDATE tb_data_pribadi SET point_penelitian = point_penelitian - ${point} WHERE user_id = '${userId}'`
+    );
+    res.status(200).json({ message: "Data deleted successfully." });
+  }
 });
 
 exports.approveStatusPenelitian = asyncHandler(async (req, res) => {
@@ -415,9 +436,21 @@ exports.approveStatusPenelitian = asyncHandler(async (req, res) => {
   if (findData.rows.length) {
     const updated_at = unixTimestamp;
     const convert = convertDate(updated_at);
-    await DB.query(
-      `UPDATE tb_penelitian SET status = $1, updated_at = $2 WHERE penelitian_id = $3`,
+    const updateStatus = await DB.query(
+      `UPDATE tb_penelitian SET status = $1, updated_at = $2 WHERE penelitian_id = $3 returning *`,
       [1, convert, penelitianId]
+    );
+
+    const data = await DB.query(
+      "SELECT tb_penelitian.*, kategori_publikasi.nama_kategori, kategori_publikasi.tingkatan, kategori_publikasi.point FROM tb_penelitian NATURAL JOIN kategori_publikasi WHERE id = $1",
+      [updateStatus.rows[0].kategori_id]
+    );
+
+    const point = data.rows[0].point;
+    const userId = data.rows[0].user_id;
+
+    await DB.query(
+      `UPDATE tb_data_pribadi SET point_penelitian = point_penelitian + ${point} WHERE user_id = '${userId}'`
     );
 
     res.status(201).json({

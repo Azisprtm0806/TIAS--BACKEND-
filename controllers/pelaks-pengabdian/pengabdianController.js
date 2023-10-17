@@ -146,18 +146,26 @@ exports.addDataPengabdian = asyncHandler(async (req, res) => {
 exports.getDataPengabdian = asyncHandler(async (req, res) => {
   const userLoginId = req.user.user_id;
 
-  const query = `SELECT tb_pengabdian.*, kategori_publikasi.nama_kategori, kategori_publikasi.tingkatan, kategori_publikasi.point FROM tb_pengabdian JOIN kategori_publikasi ON tb_pengabdian.kategori_id=kategori_publikasi.id WHERE tb_pengabdian.user_id = '${userLoginId}' and status = 1 and is_deleted = ${false}`;
+  // const query = `SELECT tb_pengabdian.*, kategori_publikasi.nama_kategori, kategori_publikasi.tingkatan, kategori_publikasi.point FROM tb_pengabdian JOIN kategori_publikasi ON tb_pengabdian.kategori_id=kategori_publikasi.id WHERE tb_pengabdian.user_id = '${userLoginId}' and is_deleted = ${false}`;
+
+  const query = `SELECT * FROM tb_pengabdian WHERE user_id = '${userLoginId}' and is_deleted = ${false}`;
 
   const dataPengabdian = await DB.query(query);
 
   const jumlahData = await DB.query(
-    "SELECT COUNT(*) FROM tb_pengabdian WHERE user_id = $1 and status = $2 and is_deleted = $3",
+    "SELECT COUNT(*) FROM tb_pengabdian WHERE user_id = $1  and is_deleted = $2",
+    [userLoginId, false]
+  );
+
+  const jumlahDataAcc = await DB.query(
+    "SELECT COUNT(*) FROM tb_pengabdian WHERE user_id = $1 and status = $2  and is_deleted = $3",
     [userLoginId, 1, false]
   );
 
   res.status(201).json({
     data: dataPengabdian.rows,
     totalData: jumlahData.rows[0].count,
+    totalDataAcc: jumlahDataAcc.rows[0].count,
   });
 });
 
@@ -213,6 +221,7 @@ exports.editDataPengabdian = asyncHandler(async (req, res) => {
     }
 
     const dataPengabdian = {
+      kategori_id: data.kategori_id,
       judul_kegiatan: data.judul_kegiatan,
       kelompok_bidang: data.kelompok_bidang,
       lokasi_kegiatan: data.lokasi_kegiatan,
@@ -347,12 +356,30 @@ exports.deleteDataPengabdian = asyncHandler(async (req, res) => {
   const created_at = unixTimestamp;
   const convert = convertDate(created_at);
 
-  await DB.query(
-    "UPDATE tb_pengabdian SET is_deleted = $1, deleted_at = $2 WHERE pengabdian_id = $3",
+  const deletePengabdian = await DB.query(
+    "UPDATE tb_pengabdian SET is_deleted = $1, deleted_at = $2 WHERE pengabdian_id = $3 returning *",
     [true, convert, pengabdianId]
   );
 
-  res.status(200).json({ message: "Data deleted successfully." });
+  if (
+    deletePengabdian.rows[0].status == 0 ||
+    deletePengabdian.rows[0].status == 2
+  ) {
+    res.status(200).json({ message: "Data deleted successfully." });
+  } else {
+    const data = await DB.query(
+      "SELECT tb_pengabdian.*, kategori_publikasi.nama_kategori, kategori_publikasi.tingkatan, kategori_publikasi.point FROM tb_pengabdian NATURAL JOIN kategori_publikasi WHERE id = $1",
+      [deletePengabdian.rows[0].kategori_id]
+    );
+
+    const point = data.rows[0].point;
+    const userId = data.rows[0].user_id;
+
+    await DB.query(
+      `UPDATE tb_data_pribadi SET point_pengabdian = point_pengabdian - ${point} WHERE user_id = '${userId}'`
+    );
+    res.status(200).json({ message: "Data deleted successfully." });
+  }
 });
 
 exports.approveStatusPengabdian = asyncHandler(async (req, res) => {
@@ -366,9 +393,21 @@ exports.approveStatusPengabdian = asyncHandler(async (req, res) => {
   if (findData.rows.length) {
     const updated_at = unixTimestamp;
     const convert = convertDate(updated_at);
-    await DB.query(
-      `UPDATE tb_pengabdian SET status = $1, updated_at = $2 WHERE pengabdian_id = $3`,
+    const updateStatus = await DB.query(
+      `UPDATE tb_pengabdian SET status = $1, updated_at = $2 WHERE pengabdian_id = $3 returning *`,
       [1, convert, pengabdianId]
+    );
+
+    const data = await DB.query(
+      "SELECT tb_pengabdian.*, kategori_publikasi.nama_kategori, kategori_publikasi.tingkatan, kategori_publikasi.point FROM tb_pengabdian NATURAL JOIN kategori_publikasi WHERE id = $1",
+      [updateStatus.rows[0].kategori_id]
+    );
+
+    const point = data.rows[0].point;
+    const userId = data.rows[0].user_id;
+
+    await DB.query(
+      `UPDATE tb_data_pribadi SET point_pengabdian = point_pengabdian + ${point} WHERE user_id = '${userId}'`
     );
 
     res.status(201).json({

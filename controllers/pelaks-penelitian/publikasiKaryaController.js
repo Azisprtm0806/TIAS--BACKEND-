@@ -154,9 +154,15 @@ exports.getDataPublikasi = asyncHandler(async (req, res) => {
     [userLoginId, false]
   );
 
+  const jumlahDataAcc = await DB.query(
+    "SELECT COUNT(*) FROM tb_publikasi_karya WHERE user_id = $1 and status = $2  and is_deleted = $3",
+    [userLoginId, 1, false]
+  );
+
   res.status(201).json({
     data: dataPublikasi.rows,
     totalData: jumlahData.rows[0].count,
+    totalDataAcc: jumlahDataAcc.rows[0].count,
   });
 });
 

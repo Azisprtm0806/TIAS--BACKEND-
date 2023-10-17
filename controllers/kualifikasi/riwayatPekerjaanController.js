@@ -118,12 +118,12 @@ exports.getDataRiwayatPekerjaan = asyncHandler(async (req, res) => {
   const userLoginId = req.user.user_id;
 
   const findData = await DB.query(
-    "SELECT * FROM tb_riwayat_pekerjaan WHERE user_id = $1 and is_deleted = $3",
+    "SELECT * FROM tb_riwayat_pekerjaan WHERE user_id = $1 and is_deleted = $2",
     [userLoginId, false]
   );
 
   const jumlahData = await DB.query(
-    "SELECT COUNT(*) FROM tb_riwayat_pekerjaan WHERE user_id = $1 and is_deleted = $3",
+    "SELECT COUNT(*) FROM tb_riwayat_pekerjaan WHERE user_id = $1 and is_deleted = $2",
     [userLoginId, false]
   );
 

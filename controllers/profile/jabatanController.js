@@ -101,8 +101,8 @@ exports.getDataJabatan = asyncHandler(async (req, res) => {
   const userLoginId = req.user.user_id;
 
   const dataJabatan = await DB.query(
-    "SELECT * FROM tb_jabatan_dosen WHERE user_id = $1",
-    [userLoginId]
+    "SELECT * FROM tb_jabatan_dosen WHERE user_id = $1 and is_deleted = $2",
+    [userLoginId, false]
   );
 
   res.status(201).json({
@@ -140,51 +140,6 @@ exports.editDataJabatan = asyncHandler(async (req, res) => {
   if (dataJabatan.rows.length) {
     const file = req.files;
     const data = req.body;
-
-    console.log(data.jabatan_fungsi);
-
-    const existsJabatan = await DB.query(
-      `SELECT * FROM tb_jabatan_dosen WHERE CAST(user_id AS TEXT) LIKE '%${userLoginId}%' AND jabatan_fungsi LIKE '%${data.jabatan_fungsi}%'`
-    );
-
-    console.log(existsJabatan.rows[0]);
-
-    if (existsJabatan.rows.length) {
-      if (Object.keys(file).length === 0) {
-        res.status(400);
-        throw new Error("Jabatan/Fungsi already exists.");
-      } else {
-        fs.unlink(file.file_jabatan[0].path, (err) => {
-          if (err) {
-            console.log(err);
-          }
-          return;
-        });
-        res.status(400);
-        throw new Error("Jabatan/Fungsi already exists.");
-      }
-    }
-
-    const existsNomerSK = await DB.query(
-      "SELECT * FROM tb_jabatan_dosen WHERE nomor_sk = $1",
-      [data.nomor_sk]
-    );
-
-    if (existsNomerSK.rows.length) {
-      if (Object.keys(file).length === 0) {
-        res.status(400);
-        throw new Error("SK Number already exists.");
-      } else {
-        fs.unlink(file.file_jabatan[0].path, (err) => {
-          if (err) {
-            console.log(err);
-          }
-          return;
-        });
-        res.status(400);
-        throw new Error("SK Number already exists.");
-      }
-    }
 
     if (Object.keys(file).length === 0) {
       const updated_at = unixTimestamp;
@@ -249,11 +204,13 @@ exports.deleteDataJabatan = asyncHandler(async (req, res) => {
     throw new Error("Data not found.");
   }
 
-  await fs.remove(path.join(`public/file-jabatan/${findData.rows[0].file}`));
-  await DB.query("DELETE FROM tb_jabatan_dosen WHERE jabatan_id = $1", [
-    findData.rows[0].jabatan_id,
-  ]);
+  const created_at = unixTimestamp;
+  const convert = convertDate(created_at);
 
+  await DB.query(
+    "UPDATE tb_jabatan_dosen SET is_deleted = $1, deleted_at = $2 WHERE pangkat_id = $3 returning *",
+    [true, convert, findData.rows[0].jabatan_id]
+  );
   res.status(200).json({ message: "Data deleted successfully." });
 });
 

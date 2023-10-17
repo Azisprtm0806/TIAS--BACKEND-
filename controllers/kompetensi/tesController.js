@@ -24,6 +24,7 @@ exports.createDataTes = asyncHandler(async (req, res) => {
       !data.jenis_tes ||
       !data.penyelenggara ||
       !data.tgl_tes ||
+      !data.kategori_id ||
       !data.skor_tes
     ) {
       fs.unlink(file.file_tes[0].path, (err) => {
@@ -34,6 +35,22 @@ exports.createDataTes = asyncHandler(async (req, res) => {
       });
       res.status(400);
       throw new Error("Pleas fill in all the required fields.");
+    }
+
+    const cekKategoriId = await DB.query(
+      "SELECT * FROM kategori_sertifikasi WHERE id = $1",
+      [data.kategori_id]
+    );
+
+    if (!cekKategoriId.rows.length) {
+      fs.unlink(file.file_tes[0].path, (err) => {
+        if (err) {
+          console.log(err);
+        }
+        return;
+      });
+      res.status(400);
+      throw new Error("Kategori Id Not Found.");
     }
 
     const created_at = unixTimestamp;
@@ -75,18 +92,24 @@ exports.getDataTes = asyncHandler(async (req, res) => {
   const userLoginId = req.user.user_id;
 
   const dataTes = await DB.query(
-    "SELECT * FROM tb_tes WHERE user_id = $1 and is_deleted = $3",
+    "SELECT * FROM tb_tes WHERE user_id = $1 and is_deleted = $2",
     [userLoginId, false]
   );
 
   const jumlahData = await DB.query(
-    "SELECT COUNT(*) FROM tb_tes WHERE user_id = $1 and is_deleted = $3",
+    "SELECT COUNT(*) FROM tb_tes WHERE user_id = $1 and is_deleted = $2",
     [userLoginId, false]
+  );
+
+  const jumlahDataAcc = await DB.query(
+    "SELECT COUNT(*) FROM tb_tes WHERE user_id = $1 and status = $2  and is_deleted = $3",
+    [userLoginId, 1, false]
   );
 
   res.status(201).json({
     data: dataTes.rows,
     totalData: jumlahData.rows[0].count,
+    totalDataAcc: jumlahDataAcc.rows[0].count,
   });
 });
 
@@ -170,7 +193,7 @@ exports.editDataTes = asyncHandler(async (req, res) => {
 exports.deleteTes = asyncHandler(async (req, res) => {
   const { tesId } = req.params;
 
-  const findData = await DB.query("SELECT * FROM tb_tes WHERE tes_id = $1", [
+  const findData = await DB.query("SELECT * FROM tb_tes WHERE tes_id = $1 ", [
     tesId,
   ]);
 
@@ -182,12 +205,28 @@ exports.deleteTes = asyncHandler(async (req, res) => {
   const created_at = unixTimestamp;
   const convert = convertDate(created_at);
 
-  await DB.query(
-    "UPDATE tb_tes SET is_deleted = $1, deleted_at = $2 WHERE tes_id = $3",
+  const deleteTes = await DB.query(
+    "UPDATE tb_tes SET is_deleted = $1, deleted_at = $2 WHERE tes_id = $3 returning *",
     [true, convert, findData.rows[0].tes_id]
   );
 
-  res.status(200).json({ message: "Data deleted successfully." });
+  if (deleteTes.rows[0].status == 2 || deleteTes.rows[0].status == 0) {
+    res.status(200).json({ message: "Data deleted successfully." });
+  } else {
+    const data = await DB.query(
+      "SELECT tb_tes.*, kategori_sertifikasi.nama_kategori, kategori_sertifikasi.point FROM tb_tes NATURAL JOIN kategori_sertifikasi WHERE id = $1",
+      [deleteTes.rows[0].kategori_id]
+    );
+
+    const point = data.rows[0].point;
+    const userId = findData.rows[0].user_id;
+
+    await DB.query(
+      `UPDATE tb_data_pribadi SET point_kompetensi = point_kompetensi - ${point} WHERE user_id = '${userId}'`
+    );
+
+    res.status(200).json({ message: "Data deleted successfully." });
+  }
 });
 
 exports.approveStatusTes = asyncHandler(async (req, res) => {
@@ -200,9 +239,22 @@ exports.approveStatusTes = asyncHandler(async (req, res) => {
   if (findData.rows.length) {
     const updated_at = unixTimestamp;
     const convert = convertDate(updated_at);
-    await DB.query(
-      `UPDATE tb_tes SET status = $1, updated_at = $2 WHERE tes_id = $3`,
+    const updateStatus = await DB.query(
+      `UPDATE tb_tes SET status = $1, updated_at = $2 WHERE tes_id = $3 returning *`,
       [1, convert, tesId]
+    );
+
+    const data = await DB.query(
+      "SELECT tb_tes.*, kategori_sertifikasi.nama_kategori, kategori_sertifikasi.point FROM tb_tes NATURAL JOIN kategori_sertifikasi WHERE id = $1",
+      [updateStatus.rows[0].kategori_id]
+    );
+
+    const point = data.rows[0].point;
+    const userId = findData.rows[0].user_id;
+
+    await DB.query(
+      "UPDATE tb_data_pribadi SET point_kompetensi = point_kompetensi + $1 WHERE user_id = $2",
+      [point, userId]
     );
 
     res.status(201).json({

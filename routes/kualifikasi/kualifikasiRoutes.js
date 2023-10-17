@@ -76,13 +76,13 @@ router.patch(
 );
 router.delete("/deletePend/:pendId", protected, deleteDataPendidikan);
 router.patch(
-  "/approveStatusRwyt/:rwytId",
+  "/approveStatusPend/:pendId",
   protected,
   adminOnly,
   approveStatusPendidikan
 );
 router.patch(
-  "/rejectStatusRwyt/:rwytId",
+  "/rejectStatusPend/:pendId",
   protected,
   adminOnly,
   rejectStatusPendidikan

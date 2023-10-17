@@ -20,7 +20,12 @@ exports.addDataProfesi = asyncHandler(async (req, res) => {
       throw new Error("Please fill in one file.");
     }
 
-    if (!data.nama_organisasi || !data.peran || !data.mulai_keanggotaan) {
+    if (
+      !data.nama_organisasi ||
+      !data.peran ||
+      !data.mulai_keanggotaan ||
+      !data.kategori_id
+    ) {
       fs.unlink(file.file_profesi[0].path, (err) => {
         if (err) {
           console.log(err);
@@ -70,12 +75,12 @@ exports.getAllDataProfesi = asyncHandler(async (req, res) => {
   const userLoginId = req.user.user_id;
 
   const dataProf = await DB.query(
-    "SELECT * FROM tb_anggota_prof WHERE user_id = $1 and is_deleted = $3",
+    "SELECT * FROM tb_anggota_prof WHERE user_id = $1 and is_deleted = $2",
     [userLoginId, false]
   );
 
   const jumlahData = await DB.query(
-    "SELECT COUNT(*) FROM tb_anggota_prof WHERE user_id = $1 and is_deleted = $3",
+    "SELECT COUNT(*) FROM tb_anggota_prof WHERE user_id = $1 and is_deleted = $2",
     [userLoginId, false]
   );
 
@@ -93,13 +98,20 @@ exports.detailDataProfesi = asyncHandler(async (req, res) => {
     [profId]
   );
 
-  if (!findData.rows.length) {
-    res.status(404);
-    throw new Error("Data not found.");
-  }
+  const jumlahData = await DB.query(
+    "SELECT COUNT(*) FROM tb_anggota_prof WHERE user_id = $1 and is_deleted = $3",
+    [userLoginId, false]
+  );
+
+  const jumlahDataAcc = await DB.query(
+    "SELECT COUNT(*) FROM tb_anggota_prof WHERE user_id = $1 and status = $2  and is_deleted = $3",
+    [userLoginId, 1, false]
+  );
 
   res.status(201).json({
     data: findData.rows[0],
+    totalData: jumlahData.rows[0].count,
+    totalDataAcc: jumlahDataAcc.rows[0].count,
   });
 });
 
@@ -181,12 +193,28 @@ exports.deleteDataProfesi = asyncHandler(async (req, res) => {
   const created_at = unixTimestamp;
   const convert = convertDate(created_at);
 
-  await DB.query(
-    "UPDATE tb_anggota_prof SET is_deleted = $1, deleted_at = $2 WHERE prof_id = $3",
+  const deleteData = await DB.query(
+    "UPDATE tb_anggota_prof SET is_deleted = $1, deleted_at = $2 WHERE prof_id = $3 returning *",
     [true, convert, findData.rows[0].prof_id]
   );
 
-  res.status(200).json({ message: "Data deleted successfully." });
+  if (deleteData.rows[0].status == 2 || deleteData.rows[0].status == 0) {
+    res.status(200).json({ message: "Data deleted successfully." });
+  } else {
+    const data = await DB.query(
+      "SELECT tb_anggota_prof.*, kategori_profesi.nama_kategori, kategori_profesi.point FROM tb_anggota_prof NATURAL JOIN kategori_profesi WHERE id = $1",
+      [deleteData.rows[0].kategori_id]
+    );
+
+    const point = data.rows[0].point;
+    const userId = findData.rows[0].user_id;
+
+    await DB.query(
+      `UPDATE tb_data_pribadi SET point_penunjang = point_penunjang - ${point} WHERE user_id = '${userId}'`
+    );
+
+    res.status(200).json({ message: "Data deleted successfully." });
+  }
 });
 
 exports.approveStatusProfesi = asyncHandler(async (req, res) => {
@@ -200,9 +228,22 @@ exports.approveStatusProfesi = asyncHandler(async (req, res) => {
   if (findData.rows.length) {
     const updated_at = unixTimestamp;
     const convert = convertDate(updated_at);
-    await DB.query(
-      `UPDATE tb_anggota_prof SET status = $1, updated_at = $2 WHERE prof_id = $3`,
+    const updateStatus = await DB.query(
+      `UPDATE tb_anggota_prof SET status = $1, updated_at = $2 WHERE prof_id = $3 returning *`,
       [1, convert, profId]
+    );
+
+    const data = await DB.query(
+      "SELECT tb_anggota_prof.*, kategori_profesi.nama_kategori, kategori_profesi.point FROM tb_anggota_prof NATURAL JOIN kategori_profesi WHERE id = $1",
+      [updateStatus.rows[0].kategori_id]
+    );
+
+    const point = data.rows[0].point;
+    const userId = findData.rows[0].user_id;
+
+    await DB.query(
+      "UPDATE tb_data_pribadi SET point_penunjang = point_penunjang + $1 WHERE user_id = $2",
+      [point, userId]
     );
 
     res.status(201).json({

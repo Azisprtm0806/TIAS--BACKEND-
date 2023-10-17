@@ -26,7 +26,7 @@ exports.addDataHki = asyncHandler(async (req, res) => {
       !data.judul_hki ||
       !data.penulis ||
       !data.nama_dok ||
-      !data.keterangan
+      !data.keterangan_hki
     ) {
       fs.unlink(file.path, (err) => {
         if (err) {
@@ -139,9 +139,15 @@ exports.getDataHki = asyncHandler(async (req, res) => {
     [userLoginId, false]
   );
 
+  const jumlahDataAcc = await DB.query(
+    "SELECT COUNT(*) FROM tb_hki WHERE user_id = $1 and status = $2  and is_deleted = $3",
+    [userLoginId, 1, false]
+  );
+
   res.status(201).json({
     data: dataHki.rows,
     totalData: jumlahData.rows[0].count,
+    totalDataAcc: jumlahDataAcc.rows[0].count
   });
 });
 

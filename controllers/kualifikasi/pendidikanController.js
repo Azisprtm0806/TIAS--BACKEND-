@@ -103,10 +103,17 @@ exports.addPendidikan = asyncHandler(async (req, res) => {
     const created_at = unixTimestamp;
     const convert = convertDate(created_at);
 
-    const keys = ["user_id", ...Object.keys(data), "file", "created_at"];
+    const newData = {};
+    for (const key in data) {
+      if (data[key] !== "") {
+        newData[key] = data[key];
+      }
+    }
+
+    const keys = ["user_id", ...Object.keys(newData), "file", "created_at"];
     const values = [
       userLoginId,
-      ...Object.values(data),
+      ...Object.values(newData),
       file.file_pend[0].filename,
       convert,
     ];
@@ -139,12 +146,12 @@ exports.getDataPendidikan = asyncHandler(async (req, res) => {
   const userLoginId = req.user.user_id;
 
   const dataPend = await DB.query(
-    "SELECT * FROM tb_pend_formal WHERE user_id = $1  and is_deleted = $3",
+    "SELECT * FROM tb_pend_formal WHERE user_id = $1  and is_deleted = $2",
     [userLoginId, false]
   );
 
   const jumlahData = await DB.query(
-    "SELECT COUNT(*) FROM tb_pend_formal WHERE user_id = $1  and is_deleted = $3",
+    "SELECT COUNT(*) FROM tb_pend_formal WHERE user_id = $1  and is_deleted = $2",
     [userLoginId, false]
   );
 
