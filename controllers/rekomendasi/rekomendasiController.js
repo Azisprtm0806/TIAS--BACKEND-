@@ -69,26 +69,37 @@ exports.addRekomendasi = asyncHandler(async (req, res) => {
 });
 
 exports.editRekomendasi = asyncHandler(async (req, res) => {
-  const {id} = req.params;
-  const {body} = req.body;
+  const { id } = req.params;
+  const { body } = req.body;
 
-  const findData = await DB.query("SELECT * FROM rekomendasi_mhs WHERE id = $1", [id]);
+  const findData = await DB.query(
+    "SELECT * FROM rekomendasi_mhs WHERE id = $1",
+    [id]
+  );
 
-  console.log(findData)
-
-  if(!findData.rows.length){
+  if (!findData.rows.length) {
     res.status(404);
-    throw new Error("Rekomendasi Not Found!")
+    throw new Error("Rekomendasi Not Found!");
   }
 
-
-   await DB.query(
-    "UPDATE rekomendasi_mhs SET body = $1 WHERE id = $2",
-    [body, id]
-  );
+  await DB.query("UPDATE rekomendasi_mhs SET body = $1 WHERE id = $2", [
+    body,
+    id,
+  ]);
 
   res.status(201).json({
     message: "Successfully update data.",
   });
+});
 
-})
+exports.getRekomendasiByUserLogin = asyncHandler(async (req, res) => {
+  const userLoginId = req.user.user_id;
+
+  const query = await DB.query(
+    `SELECT rekomendasi_mhs.id, rekomendasi_mhs.body as text_rekomendasi, rekomendasi_mhs.created_at FROM rekomendasi_mhs WHERE mahasiswa_id = '${userLoginId}'`
+  );
+
+  res.status(201).json({
+    data: query.rows,
+  });
+});
